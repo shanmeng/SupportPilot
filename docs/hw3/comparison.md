@@ -102,7 +102,5 @@ Based on these results, I would refine `AGENTS.md` to require a short feature-sp
 - [x] B test output: 6/6 passed.
 - [x] B production build passed.
 - [x] B browser screenshot captured.
-- [ ] Attach or link the A browser screenshot.
-- [ ] Insert a side-by-side visual comparison with specific mockup observations.
-- [ ] Commit the refined `AGENTS.md` and link its diff.
-- [ ] Confirm A production-build result if claiming build parity.
+- [x] Attach or link the A browser screenshot.
+- [x] Commit the refined `AGENTS.md`.
