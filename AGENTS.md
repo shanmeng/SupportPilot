@@ -90,3 +90,15 @@ docs/                     PRD, design, architecture and HW3 evidence
 6. Run real project checks; report results accurately.
 7. Self-review security, citations and permissions; open a linked PR.
 8. Report risks/unmet criteria, never silently broaden scope.
+
+## Citation Component Verification Checklist
+> Added after the HW3 before/after context-engineering experiment on US-05 (see [`docs/hw3/comparison.md`](docs/hw3/comparison.md)), to make citation requirements explicit instead of relying on the agent's implicit assumptions.
+
+For evidence citation components:
+- Use kebab-case filenames consistently.
+- Verify exact source IDs, titles, and source kinds.
+- Test both populated and empty citation lists.
+- Test keyboard interaction and visible focus states.
+- Avoid unnecessary transformations of evidence text.
+- Compare the rendered component with the approved UI mockup.
+- Report which acceptance criteria have automated tests.
