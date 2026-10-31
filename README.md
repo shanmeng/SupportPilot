@@ -19,11 +19,8 @@ Implementation progress will be tracked through GitHub Issues and the Project Bo
 - [Dashboard visual mockup](docs/mockups/dashboard.html) — open locally in a browser and capture a screenshot for HW3; this HTML is a design prototype, not a working app
 - [AI instruction file](AGENTS.md)
 - [Claude Code adapter](CLAUDE.md)
-- [GitHub Issue drafts](docs/hw3/github-issues.md)
-- [GitHub Scrum setup](docs/hw3/github-setup.md)
 - [Experiment protocol](docs/hw3/experiment-plan.md)
 - [Comparison worksheet](docs/hw3/comparison.md)
-- [Reflection template](docs/hw3/reflection-template.md)
 
 ## Planned stack
 VS Code + Claude Code; Next.js App Router, TypeScript, Tailwind CSS; Next.js Route Handlers (Node.js); PostgreSQL + pgvector; Auth.js with OAuth; Vitest, Testing Library, Playwright; GitHub Actions. These are **planned**: exact package versions will be recorded after initialization.
