@@ -93,7 +93,7 @@ The experiment shows a **specific, observable benefit** from supplying project c
 
 Based on these results, I would refine `AGENTS.md` to require a short feature-specific verification checklist before a task is marked complete: (1) preserve exact citation IDs and source text, (2) test document and record variants, (3) test populated and empty lists, (4) verify keyboard and focus behavior when the UI is interactive, (5) check the actual rendered component against the approved mockup at desktop and mobile widths, and (6) document any intentional excerpt truncation. This makes the rules more concrete and reduces reliance on the agent's implicit assumptions.
 
-## 7. Evidence Checklist for Submission
+## 7. Evidence Checklist
 
 - [x] Baseline commit recorded: `3155fc2`.
 - [x] A commit recorded: `3d64f39`.
