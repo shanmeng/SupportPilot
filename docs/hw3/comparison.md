@@ -2,9 +2,9 @@
 
 **Project:** SupportPilot  
 **Feature:** US-05 — Evidence Citation Cards  
-**Baseline commit:** `3155fc2`  
-**Experiment A (without rules):** `3d64f39` (`experiment/no-rules`)  
-**Experiment B (with rules):** `cdbe427` (`experiment/with-rules`)
+**Baseline commit:** [`3155fc2`](https://github.com/shanmeng/SupportPilot/commit/3155fc2)  
+**Experiment A (without rules):** commit [`3d64f39`](https://github.com/shanmeng/SupportPilot/commit/3d64f39) on branch [`experiment/no-rules`](https://github.com/shanmeng/SupportPilot/tree/experiment/no-rules)  
+**Experiment B (with rules):** commit [`cdbe427`](https://github.com/shanmeng/SupportPilot/commit/cdbe427) on branch [`experiment/with-rules`](https://github.com/shanmeng/SupportPilot/tree/experiment/with-rules)
 
 ## 1. Experiment Setup
 
