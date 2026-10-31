@@ -22,7 +22,9 @@ Both worktrees were based on commit `3155fc2`. Next.js 16.4.3 was observed autom
 | Measure | A — Without Rules | B — With Rules |
 |---|---|---|
 | Git commit | `3d64f39` | `cdbe427` |
-| Component file | `src/components/EvidenceCitations.tsx` | `evidence-citation-card.tsx` (exact location can be checked in B commit) |
+| Component file | `src/components/EvidenceCitations.tsx` | `src/components/chat/evidence-citation-card.tsx` |
+| Test file location | `src/components/EvidenceCitations.test.tsx` (co-located with the component) | `tests/unit/components/evidence-citation-card.test.tsx` |
+| Folder structure | Flat `src/components/`; does not use the planned `chat/` subfolder or `tests/unit/` | Follows the planned `src/components/chat/` and `tests/unit/` folders; adds shared type in `src/types/evidence.ts` |
 | Filename convention | PascalCase; does not follow the specified kebab-case convention | kebab-case; follows the specified convention |
 | Test command | `npm test` | `npm test` |
 | Vitest version | 4.1.12 | 5.0.5 |
@@ -67,7 +69,7 @@ This test suite explicitly checks interactive semantics and keyboard accessibili
 
 ## 4. Observed Differences and Interpretation
 
-**Naming consistency.** A produced `EvidenceCitations.tsx`, while B produced `evidence-citation-card.tsx`. B's filename follows the project's documented kebab-case convention. This is a concrete example of project rules influencing implementation details beyond the short feature prompt.
+**Naming and folder consistency.** A produced `src/components/EvidenceCitations.tsx` with a co-located test, while B produced `src/components/chat/evidence-citation-card.tsx`, placed its test in `tests/unit/components/`, and extracted the source type to `src/types/evidence.ts`. B's filename follows the documented kebab-case convention, and its file locations match the planned folder boundaries in `AGENTS.md` §3. This is a concrete example of project rules influencing implementation details beyond the short feature prompt.
 
 **Test priorities.** A spent three tests on excerpt-shortening behavior; B instead explicitly tested whether interactive citations are keyboard-operable and whether noninteractive citations stay out of the tab order. Both approaches contain useful checks. B's tests more visibly reflect accessibility-oriented acceptance criteria; A's tests explore additional text-processing behavior.
 
