@@ -70,7 +70,7 @@ docs/                     PRD, design, architecture and HW3 evidence
 ## 7. Scrum and GitHub flow
 - Board statuses: `Backlog` → `Sprint Todo` → `In Progress` → `In Review` → `Done`.
 - Milestones: `Sprint 1` due Nov 5, 2026; `Sprint 2` due Nov 10, 2026. P2 release Nov 12.
-- Every feature/bug starts from a GitHub Issue with a testable checkbox list, `feature`/`bug`/`chore`/`docs` and `priority:high`/`priority:medium` labels, and a sprint Milestone.
+- Every feature/bug starts from a GitHub Issue with a testable checkbox list, `Feature`/`bug`/`Chore`/`documentation` and `Priority High`/`Priority Medium`/`Priority Low` labels, and a sprint Milestone.
 - Branches: `feature/<number>-short-description`, `fix/<number>-short-description`, `chore/<number>-short-description`.
 - Conventional commits: `feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`. PR description must say `Closes #<number>` and list tested acceptance criteria, test results and UI screenshots where relevant.
 - A professor-approved solo exception allows solo work. Use a recorded AI-assisted self-review, **do not fabricate a partner's review or approval**; follow any additional professor instructions.
