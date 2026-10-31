@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js / build output
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Environment variables and secrets (keep .env.example committed)
+.env
+.env.*
+!.env.example
+*.pem
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Deployment
+.vercel/
+
+# Local database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Dataset archive, business snapshots and embeddings (distributed separately; see README)
+data/
+datasets/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Claude Code local settings
+.claude/settings.local.json
+CLAUDE.local.md
