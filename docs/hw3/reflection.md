@@ -2,8 +2,8 @@
 
 **Project:** SupportPilot  
 **Feature:** US-05 — Evidence Citation Cards  
-**Experiment A:** [Without Rules, `3d64f39`](https://github.com/shanmeng/SupportPilot/commit/3d64f39) on branch [`experiment/no-rules`](https://github.com/shanmeng/SupportPilot/tree/experiment/no-rules)  
-**Experiment B:** [With Rules, `cdbe427`](https://github.com/shanmeng/SupportPilot/commit/cdbe427) on branch [`experiment/with-rules`](https://github.com/shanmeng/SupportPilot/tree/experiment/with-rules)  
+**Experiment A:** [Without Rules, `3d64f39`](https://github.com/shanmeng/SupportPilot/commit/3d64f39)  
+**Experiment B:** [With Rules, `cdbe427`](https://github.com/shanmeng/SupportPilot/commit/cdbe427)  
 **Comparison:** [Before/After Report](https://github.com/shanmeng/SupportPilot/blob/main/docs/hw3/comparison.md)
 
 ## What I Tested
@@ -16,9 +16,9 @@ I created two Git worktrees from the same baseline commit (`3155fc2`) and asked 
 
 Both experiments generated working components and automated tests. Experiment A passed **9 of 9 tests**; Experiment B passed **6 of 6 tests**. This initially challenged my expectation that a better-defined context would necessarily produce more tests. Looking at the test names was more useful than counting them.
 
-Without rules, the agent tested source counts, exact identifiers, accessible labels, empty states, and excerpt-shortening behavior. With rules, the tests explicitly covered exact source content, the distinction between documents and records, source ordering, and whether selectable citations could be operated by keyboard with visible focus styling. The latter checks aligned more directly with the accessibility requirements documented in my project rules. B also followed the repository's structure conventions: it created `src/components/chat/evidence-citation-card.tsx` with a kebab-case filename and placed its tests in `tests/unit/`, matching the planned folders in `AGENTS.md`, whereas A created `src/components/EvidenceCitations.tsx` with a co-located test file.
+Without rules, the agent tested source counts, exact identifiers, accessible labels, empty states, and excerpt-shortening behavior. With rules, the tests explicitly covered exact source content, the distinction between documents and records, source ordering, and whether selectable citations could be operated by keyboard with visible focus styling. The latter checks aligned more directly with the accessibility requirements documented in my project rules. The B implementation also used a kebab-case component filename, following the repository convention, whereas A created `EvidenceCitations.tsx`.
 
-I learned that **passing tests are not the same as meeting acceptance criteria**. Each agent wrote tests for its own implementation, so both could report green results while emphasizing different behaviors. A had more tests, but that alone did not mean it better satisfied the issue. Conversely, B's focus-related tests did not automatically prove every visual detail matched the mockup; rendered screenshots and human review were still necessary. The [screenshots](https://github.com/shanmeng/SupportPilot/tree/main/docs/hw3/screenshots) made this concrete: A switched to a dark theme that departs from the mockup and labeled its empty state "No evidence sources were cited for this answer," while B kept the mockup's light layout and used the specified "No verified sources" wording. Neither difference would have been caught by A's passing tests.
+I learned that **passing tests are not the same as meeting acceptance criteria**. Each agent wrote tests for its own implementation, so both could report green results while emphasizing different behaviors. A had more tests, but that alone did not mean it better satisfied the issue. Conversely, B's focus-related tests did not automatically prove every visual detail matched the mockup; rendered screenshots and human review were still necessary.
 
 ## An Unexpected Context Problem
 
@@ -28,9 +28,21 @@ This taught me that context engineering includes controlling the **sources of in
 
 ## How I Refined the Rules
 
-After reviewing both outputs, I added a **Citation Component Verification Checklist** to the main repository's `AGENTS.md` (commit [`a4ae562`](https://github.com/shanmeng/SupportPilot/commit/a4ae562)). It now explicitly requires kebab-case filenames, exact source IDs/titles/types, populated and empty-list tests, keyboard and focus checks, comparison with the approved mockup, and reporting which acceptance criteria have automated tests. I also added guidance to avoid unnecessary transformations of evidence text.
+After reviewing both outputs, I added a **Citation Component Verification Checklist** to the main repository's `AGENTS.md`. It now explicitly requires kebab-case filenames, exact source IDs/titles/types, populated and empty-list tests, keyboard and focus checks, comparison with the approved mockup, and reporting which acceptance criteria have automated tests. I also added guidance to avoid unnecessary transformations of evidence text.
 
 That last point came directly from Experiment A's excerpt-shortening utility. Truncation can be useful for a compact UI, but in a technical-support investigation it should be an intentional design decision rather than a behavior silently introduced by the agent. Accurate provenance matters more than a polished-looking card.
+
+## How the Rules Connect the PRD and Mockup to Code
+
+The PRD describes *what* US-05 must do, while the dashboard mockup illustrates *how* users should encounter the evidence. `AGENTS.md` translates those sources into coding decisions: put chat UI in `src/components/chat/`, use kebab-case filenames, keep the source ID/title/excerpt exact, show the specified "No verified sources" empty state, and support visible keyboard focus on interactive cards. The with-rules implementation followed the documented component location and filename pattern and tested accessibility requirements directly. This gives the AI a repeatable path from a product requirement to implementation and verification, rather than leaving those decisions to its defaults.
+
+## How GitHub Scrum Supports AI-Assisted Development
+
+My public GitHub Project organizes work through **Backlog → Sprint Todo → In Progress → In Review → Done**. Issues contain user stories and acceptance checklists, labels communicate work type and priority, and Sprint 1 and Sprint 2 milestones establish scope and deadlines. That structure matters when working with Claude Code: I can start a session with a bounded issue, point the agent to its acceptance criteria, track the implementation on an issue-specific branch, and use a PR and test results to verify completion. The agent can help write code and tests, but the board prevents an open-ended AI conversation from becoming the project plan. Because this is an approved solo project, I will document AI-assisted self-review instead of implying that a teammate approved the work.
+
+## Changes I Would Make for Sprint 2
+
+For **Sprint 2 (due November 10)**, I would add a short issue-to-test checklist to the AI workflow: require the agent to identify the relevant PRD section and mockup before coding, map every acceptance criterion to a test or manual verification, and include a screenshot comparison for UI changes. I would also pin dependencies and run a shared test suite in CI so that comparisons and regressions are not distorted by different tool versions or self-selected tests. For SupportPilot's RAG and investigation work, I would expand integration coverage for source provenance, authenticated account scope, and read-only tool behavior. Before moving an issue to Done, I would require the PR to list any untested criteria or incomplete behavior. These are planned improvements, not claims that Sprint 2 CI or integrations already exist.
 
 ## What I Would Do Differently
 
