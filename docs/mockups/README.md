@@ -6,7 +6,6 @@ This directory contains a **static visual prototype** for SupportPilot. It docum
 2. Locate the downloaded `dashboard.html` file on your computer.
 3. Open the local file in Chrome or another browser (on macOS, use **Command + O** in Chrome and select the file).
 4. Confirm that the browser address starts with `file:///` rather than `https://github.com/`.
-5. Capture a screenshot of the rendered dashboard and save it as `dashboard.png` in this directory for HW3 visual evidence.
 
 The mockup shows a sample support investigation using **illustrative synthetic identifiers**. Buttons and text-entry areas are visual placeholders; no authentication, search, agent execution, or database operations are implemented here.
 
