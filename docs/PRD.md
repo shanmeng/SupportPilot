@@ -1,5 +1,5 @@
 # SupportPilot — Product Requirements Document
-**Status:** initial draft (HW3)  
+**Status:** initial draft (for HW3, may be modified through the completion of Project 2)  
 **Target release:** November 12, 2026
 
 ## 1. Problem statement
