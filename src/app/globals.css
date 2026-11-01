@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Light palette from docs/mockups/dashboard.html; the approved concept has no dark theme. */
+:root {
+  --background: #f2f5fa;
+  --foreground: #182539;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, Arial, sans-serif;
+}

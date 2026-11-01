@@ -38,6 +38,26 @@ The `main` branch holds the project rules, design documents and HW3 write-ups. T
 ## Planned stack
 VS Code + Claude Code; Next.js App Router, TypeScript, Tailwind CSS; Next.js Route Handlers (Node.js); PostgreSQL + pgvector; Auth.js with OAuth; Vitest, Testing Library, Playwright; GitHub Actions. These are **planned**: exact package versions will be recorded after initialization.
 
+## Installed versions
+Recorded from `package-lock.json` (`npm ls --depth=0`) and `node --version` on Oct 30, 2026. Database, auth and CI are not installed yet.
+
+| Tool | Version |
+|---|---|
+| Node.js (local) | 26.11.1 |
+| Next.js | 16.4.3 |
+| React / React DOM | 19.3.0 |
+| TypeScript | 5.9.3 |
+| Tailwind CSS | 4.3.3 |
+| ESLint | 9.39.5 |
+| Vitest | 5.0.5 |
+| @testing-library/react | 16.3.3 |
+| @testing-library/jest-dom | 7.0.1 |
+| @testing-library/user-event | 14.6.8 |
+| jsdom | 30.1.3 |
+
+## Scripts
+`npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test`
+
 ## Roadmap
 Sprint 1: Oct 30–Nov 5, 2026. Sprint 2: Nov 6–Nov 10, 2026. Release buffer: Nov 11–12, 2026.
 
