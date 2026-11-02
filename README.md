@@ -39,7 +39,11 @@ The `main` branch holds the project rules, design documents and HW3 write-ups. T
 VS Code + Claude Code; Next.js App Router, TypeScript, Tailwind CSS; Next.js Route Handlers (Node.js); PostgreSQL + pgvector; Auth.js with OAuth; Vitest, Testing Library, Playwright; GitHub Actions. These are **planned**: exact package versions will be recorded after initialization.
 
 ## Roadmap
-Sprint 1: Oct 30–Nov 5, 2026. Sprint 2: Nov 6–Nov 10, 2026. Release buffer: Nov 11–12, 2026.
+Sprint 1: Oct 30–Nov 5, 2026. 
+
+Sprint 2: Nov 6–Nov 10, 2026. 
+
+Release buffer: Nov 11–12, 2026.
 
 ## Attribution and dataset
 An educational Python/FastAPI Agentic RAG reference. This project plans an independently built TypeScript web app. The corresponding dataset is distributed separately; do not commit its archive, business snapshot, or embeddings before verifying the rights to redistribute them publicly.
