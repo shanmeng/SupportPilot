@@ -1,6 +1,6 @@
 # SupportPilot
 
-**Agentic RAG Technical Support Assistant** — proposed P2 production-grade educational application; HW3 context-engineering starter materials.
+**Agentic RAG Technical Support Assistant**
 
 ## Development Status
 SupportPilot is currently in the planning and development setup phase as part of Project 2.
