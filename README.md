@@ -72,10 +72,48 @@ npm run dev                  # http://localhost:3000
 | `npm run build` / `npm start` | Production build / serve |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generate Next.js route types, then `tsc --noEmit` |
-| `npm test` | Vitest unit and integration tests |
+| `npm test` | All Vitest projects (unit + integration) |
+| `npm run test:unit` | Unit and component tests (jsdom, no database) |
+| `npm run test:integration` | API and database tests against real PostgreSQL + pgvector |
+| `npm run test:coverage` | All tests with a V8 coverage report in `coverage/` |
 | `npm run db:up` | Start the local Docker database |
 | `npm run db:generate` | Generate a migration from `src/lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations in `drizzle/` |
+
+## Testing
+Development follows red → green → refactor: a failing test is committed before the implementation (`test: … (red)` then `feat: … (green)`).
+
+| Layer | Location | Runs against |
+|---|---|---|
+| Unit / component | `tests/unit/` | jsdom, injected fakes; no network or database |
+| Integration | `tests/integration/` | A real, disposable PostgreSQL + pgvector database; migrations are applied in `tests/integration/global-setup.ts` |
+| End-to-end | `tests/e2e/` (US-11) | Playwright against a running app |
+
+Integration tests require `DATABASE_URL` to point at a **disposable** database:
+
+```bash
+npm run db:up
+docker compose exec db createdb -U supportpilot supportpilot_test
+DATABASE_URL=postgres://supportpilot:supportpilot@localhost:5432/supportpilot_test npm run test:integration
+```
+
+Model calls are always mocked in tests; CI needs no API keys.
+
+## CI/CD
+GitHub Actions run on every pull request and on pushes to `main`:
+
+| Workflow | Stages |
+|---|---|
+| `ci.yml` | **Lint + typecheck** → **unit tests** (coverage summary + report artifact) and **integration tests** (pgvector service container) in parallel → **production build**; **security scan** in parallel: `npm audit` (runtime deps fail on moderate, all deps on high), gitleaks secret scan of full history, dependency review on PRs |
+| `codeql.yml` | CodeQL `security-extended` analysis on PRs, `main` and weekly |
+| `dependabot.yml` | Weekly npm and GitHub Actions update PRs |
+
+Deploy previews and production deployment run through the Vercel GitHub integration (documented in the deployment guide, US-11).
+
+## API
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/v1/health` | Public | Readiness: database reachable and pgvector installed. `200 {"status":"ok"}` or `503 {"status":"degraded"}`; never returns error details. |
 
 Environment variables are validated at startup by `src/lib/env.ts`; error messages name the variable but never print its value.
 
