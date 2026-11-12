@@ -114,7 +114,30 @@ Deploy previews and production deployment run through the Vercel GitHub integrat
 ## API
 | Method | Path | Auth | Description |
 |---|---|---|---|
+| GET | `/api/v1/me` | Session | The signed-in user: `id`, `name`, `email`, `image`, `role` (`engineer` or `lead`). `401` when signed out or the session is invalid. |
+| GET/POST | `/api/auth/*` | — | Auth.js sign-in, callback, session and sign-out endpoints |
 | GET | `/api/v1/health` | Public | Readiness: database reachable and pgvector installed. `200 {"status":"ok"}` or `503 {"status":"degraded"}`; never returns error details. |
+
+Errors from `/api/v1` use one shape: `{ "error": { "code": "unauthorized", "message": "…" } }`.
+
+## Authentication and roles
+- **Sign-in:** GitHub OAuth through Auth.js v5. Sessions are signed, encrypted JWTs in an HTTP-only cookie, valid for 8 hours.
+- **Users:** the first sign-in creates a row in `users`, keyed by the GitHub account ID; later sign-ins update the profile and role.
+- **Roles:**
+  - `lead` for GitHub logins listed in `LEAD_GITHUB_LOGINS`; everyone else is `engineer` (least privilege).
+  - Engineers can open only their own investigations; leads can open all (`canAccessInvestigation`).
+- **Server-side protection:**
+  - Pages call `requirePageUser()` and redirect to `/signin` without a valid session.
+  - API routes call `requireApiUser()` and return `401`.
+  - A session that does not validate (missing or non-UUID id, unknown role) is treated as signed out.
+- **Test login:** set `AUTH_TEST_LOGIN=enabled` to add two fixed test users (`e2e-engineer`, `e2e-lead`) for local development and Playwright. The test login is always off when `VERCEL_ENV=production`.
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `AUTH_SECRET` | local, Vercel (Production + Preview) | Signs and encrypts session JWTs |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | local (local OAuth app), Vercel Production (production OAuth app) | GitHub OAuth |
+| `LEAD_GITHUB_LOGINS` | local, Vercel | Lead allowlist |
+| `AUTH_TEST_LOGIN` | local, CI, optionally Vercel Preview | Enables the test users |
 
 Environment variables are validated at startup by `src/lib/env.ts`; error messages name the variable but never print its value.
 
