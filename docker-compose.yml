@@ -1,0 +1,19 @@
+# Local PostgreSQL with the pgvector extension for development and integration tests.
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: supportpilot
+      POSTGRES_PASSWORD: supportpilot
+      POSTGRES_DB: supportpilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - supportpilot-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supportpilot"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  supportpilot-db:
