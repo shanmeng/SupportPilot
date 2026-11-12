@@ -11,7 +11,7 @@
 A signed-in support engineer can ask a documentation question in the dashboard and see an answer backed by evidence citation cards that show real document IDs, titles and excerpts, on a tested Next.js + PostgreSQL foundation.
 
 ## Schedule change
-The original plan ran Sprint 1 from Oct 30 to Nov 5 and Sprint 2 from Nov 6 to Nov 10. By Nov 12 no Sprint 1 issue had been closed; time had gone to HW3 (rules file, PRD, mockup, context-engineering experiment). On Nov 12 the milestones were re-baselined to Sprint 1 → Nov 13 and Sprint 2 → Nov 15, with scope priorities and a cut list (below) to fit the remaining time. The original dates are kept in each milestone description.
+The original plan ran Sprint 1 from Oct 30 to Nov 5 and Sprint 2 from Nov 6 to Nov 10. By Nov 12 no Sprint 1 issue had been closed: the project is being built solo alongside an internship at a fast-paced startup, which left less development time than planned. On Nov 12 the milestones were re-baselined to Sprint 1 → Nov 13 and Sprint 2 → Nov 15, with scope priorities and a cut list (below) to fit the remaining time. The original dates are kept in each milestone description.
 
 ## Sprint backlog
 Estimates use story points (Fibonacci: 1, 2, 3, 5, 8) for relative effort and uncertainty, not hours.
