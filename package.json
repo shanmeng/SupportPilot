@@ -15,7 +15,8 @@
     "db:migrate": "drizzle-kit migrate",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "vercel-build": "drizzle-kit migrate && next build"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

@@ -79,6 +79,7 @@ npm run dev                  # http://localhost:3000
 | `npm run db:up` | Start the local Docker database |
 | `npm run db:generate` | Generate a migration from `src/lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations in `drizzle/` |
+| `npm run vercel-build` | Used by Vercel only: apply migrations to the target database, then build |
 
 ## Testing
 Development follows red → green → refactor: a failing test is committed before the implementation (`test: … (red)` then `feat: … (green)`).
@@ -108,7 +109,7 @@ GitHub Actions run on every pull request and on pushes to `main`:
 | `codeql.yml` | CodeQL `security-extended` analysis on PRs, `main` and weekly |
 | `dependabot.yml` | Weekly npm and GitHub Actions update PRs |
 
-Deploy previews and production deployment run through the Vercel GitHub integration (documented in the deployment guide, US-11).
+Deploy previews and production deployment run through the Vercel GitHub integration: every PR gets a preview URL, and every push to `main` deploys to production. The database is PostgreSQL hosted on Neon (Vercel Marketplace integration); each preview deployment gets its own Neon database branch. Vercel runs `npm run vercel-build`, which applies pending migrations (`drizzle-kit migrate`, using `DATABASE_URL_UNPOOLED` when available) before `next build`, so the schema always matches the deployed code.
 
 ## API
 | Method | Path | Auth | Description |
