@@ -278,6 +278,44 @@ describe("ChatWorkspace", () => {
     expect(await within(sidebar).findByRole("button", { name: "Open case: Fresh question" })).toBeInTheDocument();
   });
 
+  it("says it is investigating the payment while a scoped question runs", async () => {
+    const pending = deferred<AskResult>();
+    const { user, composer } = setup(() => pending.promise);
+
+    await user.click(screen.getByRole("button", { name: "Investigate a payment" }));
+    await user.type(screen.getByLabelText("Account ID"), "acct_bg_001");
+    await user.selectOptions(screen.getByLabelText("Environment"), "production");
+    await user.type(screen.getByLabelText("Payment ID"), "pay_bg_001_0003");
+    await user.type(composer, "Why no webhook?{Enter}");
+
+    expect(screen.getByRole("status")).toHaveTextContent("Investigating pay_bg_001_0003 in acct_bg_001 (production)…");
+    pending.resolve({ sources: [] });
+  });
+
+  it("describes each agent step's outcome in words, not only by colour", async () => {
+    const { user, composer } = setup(
+      vi.fn().mockResolvedValue({
+        answer: "Retries stop [KB-FIX-001].",
+        stopReason: "answered",
+        steps: [
+          { tool: "searchDocuments", label: "Searched documentation", outcome: "ok" },
+          { tool: "readDocument", label: "Read KB-FIX-999", outcome: "empty" },
+          { tool: "searchDocuments", label: "Searched documentation", outcome: "duplicate" },
+        ],
+        sources: [retryDoc],
+      }),
+    );
+
+    await user.type(composer, "410?{Enter}");
+
+    const steps = await screen.findByRole("list", { name: "Agent steps" });
+    expect(within(steps).getAllByRole("listitem").map((item) => item.getAttribute("aria-label"))).toEqual([
+      "Searched documentation: found results",
+      "Read KB-FIX-999: nothing found",
+      "Searched documentation: skipped (duplicate)",
+    ]);
+  });
+
   it("asks an example question when it is clicked", async () => {
     const ask = vi.fn().mockResolvedValue({ sources: [] });
     const { user } = setup(ask);
