@@ -21,6 +21,7 @@ jobs:
     # Dependabot branches get no previews (vercel.json) and cannot read repository secrets.
     if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.head_ref, 'dependabot/') }}
     runs-on: ubuntu-latest
+    environment: preview
     env:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
