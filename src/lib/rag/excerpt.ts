@@ -13,8 +13,25 @@ function stripCodeBlocks(lines: string[]): string[] {
   return kept;
 }
 
+const TABLE_SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+
+/** Table rows become "cell · cell"; separator rows are dropped. Cell text is unchanged. */
+function readableTables(lines: string[]): string[] {
+  return lines
+    .filter((line) => !TABLE_SEPARATOR.test(line))
+    .map((line) => {
+      if (!line.trim().startsWith("|")) return line;
+      return line
+        .trim()
+        .replace(/^\||\|$/g, "")
+        .split("|")
+        .map((cell) => cell.trim())
+        .join(" · ");
+    });
+}
+
 function collapse(lines: string[]): string {
-  return lines.join(" ").replace(/\s+/g, " ").trim();
+  return readableTables(lines).join(" ").replace(/\s+/g, " ").trim();
 }
 
 /**
