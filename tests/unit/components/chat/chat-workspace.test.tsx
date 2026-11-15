@@ -206,7 +206,8 @@ describe("ChatWorkspace", () => {
       environment: "production",
       paymentId: "pay_bg_001_0003",
     });
-    expect(await screen.findByText(/acct_bg_001 · production · pay_bg_001_0003/)).toBeInTheDocument();
+    const conversation = await screen.findByRole("list", { name: "Conversation" });
+    expect(within(conversation).getByText("acct_bg_001 · production · pay_bg_001_0003")).toBeInTheDocument();
   });
 
   it("shows which scope fields are still needed", async () => {
