@@ -13,7 +13,7 @@ export type PaymentRecord = {
   id: string; status: string; amount: number; currency: string; failureCode: string | null;
   failureCategory: string | null; createdAt: string; succeededAt: string | null;
 };
-export type EventRecord = { id: string; eventType: string; objectId: string; occurredAt: string };
+export type EventRecord = { id: string; eventType: string; objectId: string | null; occurredAt: string };
 export type DeliveryRecord = {
   id: string; eventId: string; status: string; attemptCount: number; lastAttemptAt: string | null;
   nextAttemptAt: string | null; deliveredAt: string | null; terminalReason: string | null;

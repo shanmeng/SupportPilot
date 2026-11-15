@@ -148,7 +148,7 @@ export const events = pgTable(
     eventType: text("event_type").notNull(),
     apiVersion: text("api_version"),
     objectType: text("object_type").notNull(),
-    objectId: text("object_id").notNull(),
+    objectId: text("object_id"),
     occurredAt: ts("occurred_at").notNull(),
   },
   (table) => [index("events_scope_object_idx").on(table.accountId, table.environment, table.objectId)],

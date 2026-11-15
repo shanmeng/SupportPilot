@@ -14,7 +14,7 @@ CREATE TABLE "events" (
 	"event_type" text NOT NULL,
 	"api_version" text,
 	"object_type" text NOT NULL,
-	"object_id" text NOT NULL,
+	"object_id" text,
 	"occurred_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint

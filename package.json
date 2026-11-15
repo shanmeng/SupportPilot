@@ -17,7 +17,8 @@
     "test:integration": "vitest run --project integration",
     "test:coverage": "vitest run --coverage",
     "vercel-build": "drizzle-kit migrate && next build",
-    "db:import-knowledge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-knowledge.mts"
+    "db:import-knowledge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-knowledge.mts",
+    "db:import-business": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-business-data.mts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

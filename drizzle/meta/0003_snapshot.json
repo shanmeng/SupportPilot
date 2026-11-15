@@ -1,5 +1,5 @@
 {
-  "id": "7de46271-2e5a-442f-882b-669cdef6cf17",
+  "id": "f7db53d1-7ac1-4b39-b4cc-516c1b6a0eef",
   "prevId": "187c2254-9f26-4380-b56f-7255f31bf12e",
   "version": "7",
   "dialect": "postgresql",
@@ -309,7 +309,7 @@
           "name": "object_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "occurred_at": {
           "name": "occurred_at",

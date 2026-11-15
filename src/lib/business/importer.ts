@@ -19,7 +19,7 @@ export type BusinessData = {
   }[];
   events: {
     event_id: string; account_id: string; environment: Environment; event_type: string; api_version: Nullable<string>;
-    object_type: string; object_id: string; occurred_at: string;
+    object_type: string; object_id: Nullable<string>; occurred_at: string;
   }[];
   webhook_deliveries: {
     delivery_id: string; event_id: string; endpoint_id: string; status: string; attempt_count: number;
@@ -28,7 +28,11 @@ export type BusinessData = {
   }[];
 };
 
-export type BusinessImportSummary = Record<keyof BusinessData, number> & { skippedDeliveries: number };
+export type BusinessImportSummary = Record<keyof BusinessData, number> & {
+  skippedDeliveries: number;
+  /** Endpoints, payments and events whose account is not in `accounts`. */
+  skippedRecords: number;
+};
 
 const date = (value: Nullable<string>) => (value ? new Date(value) : null);
 const BATCH = 1000;
@@ -38,12 +42,24 @@ async function insertBatches<T>(rows: T[], insert: (batch: T[]) => Promise<unkno
 }
 
 /**
- * Loads business records. Idempotent: existing IDs are left unchanged. A delivery is kept only if
+ * Loads business records. Idempotent: existing IDs are left unchanged. Records of accounts that are
+ * not in `accounts` are skipped. A delivery is kept only if
  * its event and endpoint exist and belong to the same account and environment; its scope is copied
  * from the event.
  */
-export async function importBusinessData(data: BusinessData): Promise<BusinessImportSummary> {
+export async function importBusinessData(input: BusinessData): Promise<BusinessImportSummary> {
   const db = getDb();
+  const knownAccounts = new Set(input.accounts.map((account) => account.account_id));
+  const known = <T extends { account_id: string }>(rows: T[]) => rows.filter((row) => knownAccounts.has(row.account_id));
+  const data: BusinessData = {
+    ...input,
+    webhook_endpoints: known(input.webhook_endpoints),
+    payments: known(input.payments),
+    events: known(input.events),
+  };
+  const skippedRecords =
+    input.webhook_endpoints.length + input.payments.length + input.events.length -
+    (data.webhook_endpoints.length + data.payments.length + data.events.length);
   await insertBatches(data.accounts, (batch) =>
     db.insert(accounts).values(batch.map((r) => ({
       id: r.account_id, name: r.name, productionStatus: r.production_status, currentPlan: r.current_plan,
@@ -92,5 +108,6 @@ export async function importBusinessData(data: BusinessData): Promise<BusinessIm
     events: data.events.length,
     webhook_deliveries: deliveries.length,
     skippedDeliveries: data.webhook_deliveries.length - deliveries.length,
+    skippedRecords,
   };
 }
