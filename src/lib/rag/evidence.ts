@@ -11,6 +11,10 @@ const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
   migration_guide: "Migration guide",
 };
 
+export function documentKindLabel(kind: DocumentKind): string {
+  return DOCUMENT_KIND_LABELS[kind];
+}
+
 /** Maps a search result to a citation. ID, title and excerpt are passed through unchanged. */
 export function toEvidenceSource(evidence: DocumentEvidence): EvidenceSource {
   return {

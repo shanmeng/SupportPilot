@@ -151,3 +151,20 @@ export async function searchKnowledgeChunks(params: SearchParams): Promise<Searc
     score: Number(row.score),
   }));
 }
+
+export type StoredDocument = { id: string; title: string; kind: DocumentKind; content: string };
+
+/** The full stored text of one document (its chunks in order), or null if the ID does not exist. */
+export async function readKnowledgeDocument(documentId: string): Promise<StoredDocument | null> {
+  const [doc] = await getDb()
+    .select({ id: documents.id, title: documents.title, kind: documents.kind })
+    .from(documents)
+    .where(eq(documents.id, documentId));
+  if (!doc) return null;
+  const chunks = await getDb()
+    .select({ content: documentChunks.content })
+    .from(documentChunks)
+    .where(eq(documentChunks.documentId, documentId))
+    .orderBy(documentChunks.chunkIndex);
+  return { ...doc, content: chunks.map((chunk) => chunk.content).join("\n\n") };
+}

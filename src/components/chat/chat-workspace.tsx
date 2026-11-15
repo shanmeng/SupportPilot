@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { AgentStep, StopReason } from "@/lib/agent/document-agent";
 import { askDocumentation, type AskResult } from "@/lib/api/search-client";
 import { evidenceKey } from "@/lib/rag/evidence";
 import type { EvidenceSource } from "@/types/evidence";
@@ -12,6 +13,9 @@ type Turn = {
   question: string;
   status: "loading" | "done" | "error";
   sources: EvidenceSource[];
+  answer: string | null;
+  stopReason: StopReason | null;
+  steps: AgentStep[];
   error: string | null;
 };
 
@@ -47,8 +51,14 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
   async function run(id: number, question: string) {
     update(id, { status: "loading", error: null });
     try {
-      const { sources } = await ask(question);
-      update(id, { status: "done", sources });
+      const result = await ask(question);
+      update(id, {
+        status: "done",
+        sources: result.sources,
+        answer: result.answer ?? null,
+        stopReason: result.stopReason ?? null,
+        steps: result.steps ?? [],
+      });
     } catch (error) {
       update(id, { status: "error", error: error instanceof Error ? error.message : "Something went wrong." });
     }
@@ -57,7 +67,7 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
   function submit(question: string) {
     if (busy) return;
     const id = nextId.current++;
-    setTurns((current) => [...current, { id, question, status: "loading", sources: [], error: null }]);
+    setTurns((current) => [...current, { id, question, status: "loading", sources: [], answer: null, stopReason: null, steps: [], error: null }]);
     void run(id, question);
   }
 
@@ -196,6 +206,41 @@ function TurnAnswer({ turn, selectedId, onSelect, onRetry }: TurnAnswerProps) {
   }
 
   const count = turn.sources.length;
+  const citations = (
+    <>
+      <h3 className="mt-4 mb-2 text-xs font-bold text-[#3a4a63]">Evidence sources</h3>
+      <EvidenceCitationList sources={turn.sources} onSelect={onSelect} selectedId={selectedId} />
+    </>
+  );
+
+  if (turn.answer !== null) {
+    const pill = STOP_PILLS[turn.stopReason ?? "answered"];
+    return (
+      <section aria-label={`Answer to: ${turn.question}`} className={card}>
+        <span className={`mb-3 inline-block rounded-full px-2.5 py-1 text-xs ${pill.className}`}>{pill.text}</span>
+        <p className="whitespace-pre-wrap text-[#182539]">{turn.answer}</p>
+        <p className="mt-2 text-xs text-[#75839a]">
+          AI-generated answer: check it against the sources below. Only sources the agent actually retrieved are shown.
+          Documentation describes general policy; it does not confirm the status of a specific payment.
+        </p>
+        {turn.steps.length > 0 ? (
+          <ol aria-label="Agent steps" className="mt-3 flex flex-wrap gap-2">
+            {turn.steps.map((step, index) => (
+              <li
+                key={index}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#f2f5fa] px-2 py-1 text-[11px] text-[#51627b]"
+              >
+                <span aria-hidden="true" className={`size-1.5 rounded-full ${STEP_DOT[step.outcome]}`} />
+                {step.label}
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        {citations}
+      </section>
+    );
+  }
+
   return (
     <section aria-label={`Answer to: ${turn.question}`} className={card}>
       <span className="mb-3 inline-block rounded-full bg-[#e7f7ed] px-2.5 py-1 text-xs text-[#2a7159]">
@@ -211,8 +256,23 @@ function TurnAnswer({ turn, selectedId, onSelect, onRetry }: TurnAnswerProps) {
           Documentation describes general policy; it does not confirm the status of a specific payment.
         </p>
       ) : null}
-      <h3 className="mt-4 mb-2 text-xs font-bold text-[#3a4a63]">Evidence sources</h3>
-      <EvidenceCitationList sources={turn.sources} onSelect={onSelect} selectedId={selectedId} />
+      {citations}
     </section>
   );
 }
+
+const STOP_PILLS: Record<StopReason, { text: string; className: string }> = {
+  answered: { text: "✓ Answer ready", className: "bg-[#e7f7ed] text-[#2a7159]" },
+  no_evidence: { text: "No documentation found", className: "bg-[#fff6e5] text-[#8a5a00]" },
+  budget_exhausted: { text: "Stopped at the step limit", className: "bg-[#fff6e5] text-[#8a5a00]" },
+  error: { text: "Assistant unavailable", className: "bg-[#fdeeee] text-[#8a2c2c]" },
+};
+
+const STEP_DOT: Record<AgentStep["outcome"], string> = {
+  ok: "bg-[#2a7159]",
+  empty: "bg-[#c59a3a]",
+  duplicate: "bg-[#9aa7b8]",
+  rejected: "bg-[#b54848]",
+  error: "bg-[#b54848]",
+  budget: "bg-[#c59a3a]",
+};
