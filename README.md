@@ -89,7 +89,7 @@ Development follows red → green → refactor: a failing test is committed befo
 |---|---|---|
 | Unit / component | `tests/unit/` | jsdom, injected fakes; no network or database |
 | Integration | `tests/integration/` | A real, disposable PostgreSQL + pgvector database; migrations are applied in `tests/integration/global-setup.ts` |
-| End-to-end | `tests/e2e/` (US-11) | Playwright against a running app |
+| End-to-end | `tests/e2e/` | Playwright (Chromium) against a production build (`next start`) with the test login and a disposable database seeded with the synthetic fixtures; no API keys, so answers are deterministic |
 
 Integration tests require `DATABASE_URL` to point at a **disposable** database:
 
@@ -101,12 +101,23 @@ DATABASE_URL=postgres://supportpilot:supportpilot@localhost:5432/supportpilot_te
 
 Model calls are always mocked in tests; CI needs no API keys.
 
+End-to-end tests locally (needs a **disposable** database; the seed truncates it):
+
+```bash
+npx playwright install chromium
+export DATABASE_URL=postgres://supportpilot:supportpilot@localhost:5432/supportpilot_e2e
+E2E_ALLOW_SEED=yes npm run e2e:seed   # migrations + 3 fixture documents + 2 fixture accounts
+npm run build && npm run test:e2e
+```
+
+The specs cover sign-in/sign-out and roles, documentation answers with citation cards and the "No verified sources" state, payment investigation with record citations, cross-account isolation and Flow C (missing scope), and saved history (reload, reopen, engineer vs lead access).
+
 ## CI/CD
 GitHub Actions run on every pull request and on pushes to `main`:
 
 | Workflow | Stages |
 |---|---|
-| `ci.yml` | **Lint + typecheck** → **unit tests** (coverage summary + report artifact) and **integration tests** (pgvector service container) in parallel → **production build**; **security scan** in parallel: `npm audit` (runtime deps fail on moderate, all deps on high), gitleaks secret scan of full history, dependency review on PRs |
+| `ci.yml` | **Lint + typecheck** → **unit tests** (coverage summary + report artifact), **integration tests** (pgvector service container) and **E2E tests** (Playwright against a seeded service database; report uploaded on failure) in parallel → **production build**; **security scan** in parallel: `npm audit` (runtime deps fail on moderate, all deps on high), gitleaks secret scan of full history, dependency review on PRs |
 | `codeql.yml` | CodeQL `security-extended` analysis on PRs, `main` and weekly |
 | `dependabot.yml` | Weekly npm and GitHub Actions update PRs |
 | `neon-preview-cleanup.yml` | When a PR is merged or closed, deletes its Neon database branch `preview/<git-branch>` (never `main`); can also be run by hand for a given git branch |
@@ -114,6 +125,13 @@ GitHub Actions run on every pull request and on pushes to `main`:
 Deploy previews and production deployment run through the Vercel GitHub integration: every PR gets a preview URL, and every push to `main` deploys to production. The database is PostgreSQL hosted on Neon (Vercel Marketplace integration); each preview deployment gets its own Neon database branch. Vercel runs `npm run vercel-build`, which applies pending migrations (`drizzle-kit migrate`, using `DATABASE_URL_UNPOOLED` when available) before `next build`, so the schema always matches the deployed code.
 
 Dependabot branches (`dependabot/**`) do not get Vercel previews (`git.deploymentEnabled` in `vercel.json`). Each preview creates a Neon branch, and the Neon Free plan allows 10 branches per project; dependency PRs are fully checked by CI and do not need a live preview.
+
+### PR previews
+Every PR (except Dependabot's) gets a Vercel preview:
+1. Vercel creates a Neon branch `preview/<git-branch>` from the production database, so the preview has the same documents and business records.
+2. `npm run vercel-build` applies pending migrations to that branch, then builds.
+3. The preview uses the **Preview** environment variables on Vercel: `AUTH_SECRET`, `LEAD_GITHUB_LOGINS=…,e2e-lead`, `AUTH_TEST_LOGIN=enabled` (Preview only), `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`. GitHub OAuth is configured for production only, so previews are tested with the **test login** (`e2e-engineer`, `e2e-lead`).
+4. Previews are behind Vercel deployment protection (team members only).
 
 Preview branches of closed PRs are deleted by `neon-preview-cleanup.yml`. It needs, under **Settings → Secrets and variables → Actions**: the secret `NEON_API_KEY` (a Neon API key) and the variable `NEON_PROJECT_ID` (the Neon project ID, e.g. `mute-tooth-…`).
 

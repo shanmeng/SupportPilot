@@ -18,7 +18,9 @@
     "test:coverage": "vitest run --coverage",
     "vercel-build": "drizzle-kit migrate && next build",
     "db:import-knowledge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-knowledge.mts",
-    "db:import-business": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-business-data.mts"
+    "db:import-business": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --conditions=react-server --import ./scripts/ts-path-hooks.mjs --env-file-if-exists=.env.local scripts/import-business-data.mts",
+    "test:e2e": "playwright test",
+    "e2e:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/ts-path-hooks.mjs scripts/seed-e2e.mts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
@@ -32,6 +34,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",

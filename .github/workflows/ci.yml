@@ -90,7 +90,7 @@ jobs:
 
   build:
     name: Production build
-    needs: [unit, integration]
+    needs: [unit, integration, e2e]
     runs-on: ubuntu-latest
     env:
       # Build-time placeholder only; no database is contacted during `next build`.
@@ -103,6 +103,51 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+
+  e2e:
+    name: E2E tests (Playwright)
+    needs: quality
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: supportpilot
+          POSTGRES_PASSWORD: supportpilot
+          POSTGRES_DB: supportpilot_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U supportpilot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Disposable service database seeded with synthetic fixtures only; no dataset, no API keys.
+      DATABASE_URL: postgres://supportpilot:supportpilot@localhost:5432/supportpilot_e2e
+      E2E_ALLOW_SEED: "yes"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Migrate and seed fixtures
+        run: npm run e2e:seed
+      - run: npm run build
+      - name: Run Playwright
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
 
   security:
     name: Security scan
