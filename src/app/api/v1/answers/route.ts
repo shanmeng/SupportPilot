@@ -33,8 +33,9 @@ const headers = { "Cache-Control": "no-store" };
  * A partial scope, or a question that names a record without one, gets the missing fields back (Flow C).
  */
 export async function POST(request: Request) {
-  const { user, response } = await requireApiUser();
-  if (response) return response;
+  const auth = await requireApiUser();
+  if (auth.response) return auth.response;
+  const user = auth.user;
 
   let body: unknown;
   try {
