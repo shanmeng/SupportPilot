@@ -78,6 +78,16 @@ describe("scoped business records (real PostgreSQL)", () => {
     await expect(getPayment({ accountId: "acct_missing", environment: "production" }, "pay_orphan_0001")).resolves.toBeNull();
   });
 
+  it("imports events that have no object (for example invoice events) without breaking payment queries", async () => {
+    const invoiceEvent = { ...businessFixtures.events[0], event_id: "evt_test_a_inv", object_type: "invoice", object_id: null };
+
+    await importBusinessData({ ...businessFixtures, events: [...businessFixtures.events, invoiceEvent] });
+
+    const [row] = await getDb().execute<{ n: number }>(sql`select count(*)::int as n from events where id = 'evt_test_a_inv'`);
+    expect(row.n).toBe(1);
+    await expect(listPaymentEvents(scopeA, "pay_test_a_0001")).resolves.toHaveLength(1);
+  });
+
   it("re-importing the same data does not duplicate rows", async () => {
     await importBusinessData(businessFixtures);
 
