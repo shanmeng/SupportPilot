@@ -69,6 +69,15 @@ describe("scoped business records (real PostgreSQL)", () => {
     ]);
   });
 
+  it("skips records whose account does not exist instead of failing the import", async () => {
+    const orphan = { ...businessFixtures.payments[0], payment_id: "pay_orphan_0001", account_id: "acct_missing" };
+
+    const summary = await importBusinessData({ ...businessFixtures, payments: [...businessFixtures.payments, orphan] });
+
+    expect(summary.skippedRecords).toBe(1);
+    await expect(getPayment({ accountId: "acct_missing", environment: "production" }, "pay_orphan_0001")).resolves.toBeNull();
+  });
+
   it("re-importing the same data does not duplicate rows", async () => {
     await importBusinessData(businessFixtures);
 
