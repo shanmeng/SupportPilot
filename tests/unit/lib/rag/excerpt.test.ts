@@ -27,6 +27,13 @@ describe("toExcerpt", () => {
     expect(toExcerpt(content)).toBe("Endpoints belong to one account and environment.");
   });
 
+  it("renders Markdown table rows as readable text without separator rows", () => {
+    const content =
+      "## Payment method errors\n\n| Error code | Meaning |\n| --- | --- |\n| `FP-4021` | Payment Method Declined |";
+
+    expect(toExcerpt(content)).toBe("Error code · Meaning `FP-4021` · Payment Method Declined");
+  });
+
   it("falls back to the code text when a chunk has nothing else", () => {
     const content = "## Endpoint\n\n```http\nPOST /v1/webhook_endpoints\n```";
 

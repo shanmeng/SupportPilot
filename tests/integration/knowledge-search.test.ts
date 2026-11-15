@@ -124,6 +124,12 @@ describe("searchDocuments (real PostgreSQL + pgvector)", () => {
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
 
+  it("ranks the document whose title matches above documents that only mention the words", async () => {
+    const result = await searchDocuments({ query: "missing webhook notification", limit: 3 }, { embedder: null });
+
+    expect(result.results[0]?.id).toBe("KB-FIX-002");
+  });
+
   it("respects the limit", async () => {
     const result = await searchDocuments({ query: "webhook account endpoint", limit: 1 }, {
       embedder: createFakeEmbedder(),
