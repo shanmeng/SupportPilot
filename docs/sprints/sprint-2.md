@@ -20,12 +20,12 @@ Estimates use story points (Fibonacci) for relative effort and uncertainty, not 
 |---|---|---|---|---|
 | [#29](https://github.com/shanmeng/SupportPilot/issues/29) | Chore: skip Vercel previews for Dependabot branches | Medium | 1 | Done (Nov 14) |
 | [#34](https://github.com/shanmeng/SupportPilot/issues/34) | Chore: delete Neon preview branches when a PR closes | Medium | 1 | Done (Nov 14) |
-| [#7](https://github.com/shanmeng/SupportPilot/issues/7) | US-07 Bounded Agentic RAG document tools | High | 5 | To do |
-| [#8](https://github.com/shanmeng/SupportPilot/issues/8) | US-08 Scoped payment and webhook investigation | High | 8 | To do |
-| [#9](https://github.com/shanmeng/SupportPilot/issues/9) | US-09 Persist and reopen authorized investigations | High | 5 | To do |
-| [#10](https://github.com/shanmeng/SupportPilot/issues/10) | US-10 Agent progress and tool activity states | Medium | 3 | To do |
-| [#11](https://github.com/shanmeng/SupportPilot/issues/11) | US-11 Playwright E2E and PR CI checks | High | 5 | To do |
-| [#12](https://github.com/shanmeng/SupportPilot/issues/12) | US-12 OpenAPI and production deploy docs | High | 3 | To do |
+| [#7](https://github.com/shanmeng/SupportPilot/issues/7) | US-07 Bounded Agentic RAG document tools | High | 5 | Done |
+| [#8](https://github.com/shanmeng/SupportPilot/issues/8) | US-08 Scoped payment and webhook investigation | High | 8 | Done |
+| [#9](https://github.com/shanmeng/SupportPilot/issues/9) | US-09 Persist and reopen authorized investigations | High | 5 | Done |
+| [#10](https://github.com/shanmeng/SupportPilot/issues/10) | US-10 Agent progress and tool activity states | Medium | 3 | Done (reduced: no streaming) |
+| [#11](https://github.com/shanmeng/SupportPilot/issues/11) | US-11 Playwright E2E and PR CI checks | High | 5 | Done |
+| [#12](https://github.com/shanmeng/SupportPilot/issues/12) | US-12 OpenAPI and production deploy docs | High | 3 | Done |
 | | **Total** | | **31** (2 done) | |
 
 US-08 is the largest: it adds business tables, an import from the dataset's SQLite file and the scoped tools, and its cross-account isolation tests come first. US-11's CI part already exists from US-06 (lint, typecheck, unit, integration, build, security); E2E is the remaining work.
@@ -108,24 +108,49 @@ Format: done since last standup / next / blockers. **Written by the owner.**
 - **Blockers:**
 
 ## Sprint review
-_To complete at sprint end._
+**All Sprint 2 stories are done (31 / 31 points); US-10 shipped with reduced scope** (no live streaming, see below). Everything was merged on Nov 15 with merge commits after green CI. Production: https://support-pilot-two.vercel.app.
 
 | Issue | Outcome | PR |
 |---|---|---|
-| #7 | | |
-| #8 | | |
-| #9 | | |
-| #10 | | |
-| #11 | | |
-| #12 | | |
+| #7 US-07 | Bounded documentation agent (Responses API, `gpt-6.1-sol`): ≤5 model / ≤3 tool calls, dedupe, stop reasons, citations verified against retrieved IDs, no AI text without evidence; `POST /api/v1/answers`. Verified on production | [#38](https://github.com/shanmeng/SupportPilot/pull/38) |
+| #8 US-08 | Business tables + importer (18,042 payments, 16,957 deliveries); read-only tools bound to the engineer's account + environment (the model has no account parameter); Flow C; cross-account isolation tests. Verified on a preview with real data | [#39](https://github.com/shanmeng/SupportPilot/pull/39) |
+| #9 US-09 | Every answer saved; history API with cursor pagination; engineer own / lead all; 404 for others' cases; "Recent cases" sidebar and reopen | [#40](https://github.com/shanmeng/SupportPilot/pull/40) |
+| #10 US-10 | Idle / running / completed / failed states, step labels with outcomes in words, investigation-specific running status. **Not done:** live step streaming (SSE) — first item on the cut list | [#43](https://github.com/shanmeng/SupportPilot/pull/43) |
+| #11 US-11 | 10 Playwright journeys (auth, documentation, investigation incl. isolation and Flow C, history incl. roles) as a CI job; PR previews documented; branch protection with 7 required checks | [#41](https://github.com/shanmeng/SupportPilot/pull/41) |
+| #12 US-12 | OpenAPI 3.1 + Swagger UI (`/api-docs`) with a drift test; architecture, ER, deployment, AI-workflow docs; GitHub Environments; production smoke test after every deploy | [#42](https://github.com/shanmeng/SupportPilot/pull/42) |
+| #29, #34 | Dependabot previews skipped; Neon preview branches deleted on PR close | [#30](https://github.com/shanmeng/SupportPilot/pull/30), [#35](https://github.com/shanmeng/SupportPilot/pull/35) |
 
-Completed points: __ / 31
+Completed points: **31 / 31** (US-10 reduced in scope)
+
+**Demoable increment:** sign in with GitHub → ask a documentation question → AI answer citing real documents, with the agent's steps → open "Investigate a payment" (`acct_bg_001`, production, `pay_bg_001_0003`) → diagnosis citing the payment, event, delivery and endpoint records → reopen it from "Recent cases"; a lead sees every engineer's cases. API docs at `/api-docs`.
+
+**Quality at sprint end:** 16 red / 16 green TDD commit pairs on `main`; over 210 Vitest tests (unit + integration on real PostgreSQL + pgvector) and 10 Playwright E2E tests in CI; CodeQL, npm audit, gitleaks and dependency review on every PR; production smoke test after every deploy.
 
 ## Retrospective
-_To complete at sprint end._
+> Facts below were drafted by Claude Code from the repository, PRs and CI history. The owner reviews them and writes the parts marked **(owner)**.
 
-- **What went well:**
-- **What didn't go well:**
-- **What to change next time:**
-- **AI harness notes:**
-- **Feedback** (solo exception: self-assessment in place of partner feedback):
+### What went well
+- The agent's safety rules held up against the real model, not only mocks: unrelated questions returned `no_evidence`; a prompt-injection attempt did not produce an invented citation; a payment from another account was "not found" with nothing leaked.
+- Real data found real bugs early: the first business import failed on two dataset edge cases, each fixed test-first before anything was pushed.
+- Verifying on previews (with production data copies) caught issues before production; the production smoke test now automates the final check.
+- **(owner)** …
+
+### What didn't go well
+- **Live progress (SSE) was cut** to protect must-have work (E2E, docs, deployment checks).
+- **Process slip repeated:** a commit was made while typecheck was failing (`1b107d2`), the same pattern the Sprint 1 lesson warned about; fixed in the next commit and recorded on PR #40.
+- **Neon branch limit** was hit a second time (merged-PR previews) before the automatic cleanup existed.
+- **Docs needed rendering checks:** two Mermaid diagrams failed to render on GitHub until checked in the browser; CodeQL flagged a race in a new test helper.
+- **(owner)** …
+
+### What to change next time
+- Run typecheck as a separate step and read it before every commit (or add a pre-commit hook).
+- Plan streaming/progress work earlier when it is a rubric item, or define its reduced version up front.
+- **(owner)** …
+
+### AI harness notes
+- New in Sprint 2: the harness blocked merges without explicit owner approval each time and blocked one dependency install; Playwright was added after the owner asked for US-11.
+- See [ai-workflow.md](../ai-workflow.md) for the full list of AI mistakes and how they were caught.
+- **(owner)** …
+
+### Feedback (solo exception: self-assessment in place of partner feedback)
+- **(owner)** …
