@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ChatWorkspace } from "@/components/chat/chat-workspace";
+import type { HistoryClient } from "@/lib/api/investigations-client";
 import type { AskResult } from "@/lib/api/search-client";
 import type { EvidenceSource } from "@/types/evidence";
 
@@ -30,9 +31,11 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function setup(ask: (question: string) => Promise<AskResult>) {
+const emptyHistory: HistoryClient = { list: vi.fn().mockResolvedValue([]), get: vi.fn() };
+
+function setup(ask: (question: string) => Promise<AskResult>, history: HistoryClient = emptyHistory) {
   const user = userEvent.setup();
-  render(<ChatWorkspace ask={ask} />);
+  render(<ChatWorkspace ask={ask} history={history} />);
   const composer = screen.getByRole("textbox", { name: "Ask a question" });
   return { user, composer };
 }
@@ -224,6 +227,55 @@ describe("ChatWorkspace", () => {
 
     expect(await screen.findByText("Needs more information")).toBeInTheDocument();
     expect(screen.getByText(/I need the environment, payment ID/)).toBeInTheDocument();
+  });
+
+  it("lists recent cases from the history API", async () => {
+    const history: HistoryClient = {
+      list: vi.fn().mockResolvedValue([
+        { id: "11111111-1111-4111-8111-111111111111", question: "Why no webhook?", ownerName: "Alice", stopReason: "answered", createdAt: "2026-11-15T10:00:00.000Z", scope: null },
+      ]),
+      get: vi.fn(),
+    };
+    setup(vi.fn(), history);
+
+    const sidebar = screen.getByRole("complementary", { name: "Investigations" });
+    expect(await within(sidebar).findByRole("button", { name: "Open case: Why no webhook?" })).toBeInTheDocument();
+    expect(within(sidebar).queryByText("No saved investigations yet")).not.toBeInTheDocument();
+  });
+
+  it("reopens a saved investigation with its answer and evidence", async () => {
+    const history: HistoryClient = {
+      list: vi.fn().mockResolvedValue([
+        { id: "11111111-1111-4111-8111-111111111111", question: "Why no webhook?", ownerName: "Alice", stopReason: "answered", createdAt: "2026-11-15T10:00:00.000Z", scope: null },
+      ]),
+      get: vi.fn().mockResolvedValue({
+        id: "11111111-1111-4111-8111-111111111111",
+        question: "Why no webhook?",
+        scope: { accountId: "acct_bg_001", environment: "production", paymentId: "pay_bg_001_0003" },
+        answer: "The delivery is retrying [del_bg_001_0003].",
+        stopReason: "answered",
+        steps: [{ tool: "listWebhookDeliveries", label: "Listed webhook deliveries for pay_bg_001_0003", outcome: "ok" }],
+        citations: [{ id: "del_bg_001_0003", title: "Webhook delivery del_bg_001_0003", excerpt: "retrying · 1 attempt", kind: "record" }],
+      }),
+    };
+    const { user } = setup(vi.fn(), history);
+
+    await user.click(await screen.findByRole("button", { name: "Open case: Why no webhook?" }));
+
+    expect(history.get).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111");
+    expect(await screen.findByText("The delivery is retrying [del_bg_001_0003].")).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Evidence sources" })).getByText("del_bg_001_0003")).toBeInTheDocument();
+  });
+
+  it("adds a newly answered question to the top of recent cases", async () => {
+    const { user, composer } = setup(
+      vi.fn().mockResolvedValue({ sources: [retryDoc], investigationId: "22222222-2222-4222-8222-222222222222" }),
+    );
+
+    await user.type(composer, "Fresh question{Enter}");
+
+    const sidebar = screen.getByRole("complementary", { name: "Investigations" });
+    expect(await within(sidebar).findByRole("button", { name: "Open case: Fresh question" })).toBeInTheDocument();
   });
 
   it("asks an example question when it is clicked", async () => {
