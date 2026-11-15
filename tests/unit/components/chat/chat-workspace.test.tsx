@@ -151,6 +151,46 @@ describe("ChatWorkspace", () => {
     expect(screen.getByRole("heading", { name: "Ask about payments and webhooks" })).toBeInTheDocument();
   });
 
+  it("shows the agent's answer, marks it as AI-generated and lists the steps it took", async () => {
+    const { user, composer } = setup(
+      vi.fn().mockResolvedValue({
+        answer: "After HTTP 410 the endpoint is disabled [KB-FIX-001].",
+        stopReason: "answered",
+        steps: [
+          { tool: "searchDocuments", label: "Searched documentation", outcome: "ok" },
+          { tool: "readDocument", label: "Read KB-FIX-001", outcome: "ok" },
+        ],
+        sources: [retryDoc],
+      }),
+    );
+
+    await user.type(composer, "What happens after HTTP 410?{Enter}");
+
+    expect(await screen.findByText("After HTTP 410 the endpoint is disabled [KB-FIX-001].")).toBeInTheDocument();
+    expect(screen.getByText(/AI-generated answer/)).toBeInTheDocument();
+    const steps = screen.getByRole("list", { name: "Agent steps" });
+    expect(within(steps).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "Searched documentation",
+      "Read KB-FIX-001",
+    ]);
+    expect(within(screen.getByRole("list", { name: "Evidence sources" })).getByText("KB-FIX-001")).toBeInTheDocument();
+  });
+
+  it("explains when the agent stopped at its step limit", async () => {
+    const { user, composer } = setup(
+      vi.fn().mockResolvedValue({
+        answer: "I reached the step limit before finishing an answer.",
+        stopReason: "budget_exhausted",
+        steps: [],
+        sources: [retryDoc],
+      }),
+    );
+
+    await user.type(composer, "webhook{Enter}");
+
+    expect(await screen.findByText(/Stopped at the step limit/)).toBeInTheDocument();
+  });
+
   it("asks an example question when it is clicked", async () => {
     const ask = vi.fn().mockResolvedValue({ sources: [] });
     const { user } = setup(ask);
