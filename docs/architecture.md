@@ -84,7 +84,7 @@ sequenceDiagram
       DB-->>T: rows
       T-->>A: evidence (IDs proven to exist) + data marked untrusted
     end
-    A->>A: keep only citations whose IDs a tool returned; no evidence → fixed "not found" answer
+    A->>A: keep only citations whose IDs a tool returned, and use a fixed not-found answer without evidence
     A-->>R: answer · citations · steps · stop reason
     R->>DB: save investigation (owner = signed-in user)
     R-->>UI: answer + verified citations + investigationId
@@ -120,7 +120,7 @@ All pages and APIs check the session on the server. Another engineer's investiga
 flowchart LR
   PR["Pull request"] --> CI["GitHub Actions ci.yml<br/>lint + typecheck → unit ‖ integration ‖ E2E → build<br/>security scan · CodeQL"]
   PR --> Prev["Vercel preview<br/>Neon branch preview/BRANCH<br/>migrations in vercel-build"]
-  CI -->|all 7 required checks green<br/>(branch protection)| Merge["Merge commit into main"]
+  CI -->|"all 7 required checks green<br/>(branch protection)"| Merge["Merge commit into main"]
   Merge --> Prod["Vercel production<br/>migrations · deploy"]
   Prod --> Smoke["production-smoke.yml<br/>(environment: production)<br/>health · 401s · no test login"]
   Merge --> Clean["neon-preview-cleanup.yml<br/>(environment: preview)<br/>delete preview/BRANCH"]
