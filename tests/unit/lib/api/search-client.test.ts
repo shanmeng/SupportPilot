@@ -54,6 +54,17 @@ describe("askDocumentation", () => {
     });
   });
 
+  it("sends the investigation scope when one is given", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(200, { mode: "records", answer: null, stopReason: null, steps: [], removedCitations: [], citations: [] }),
+    );
+    const scope = { accountId: "acct_bg_001", environment: "production" as const, paymentId: "pay_bg_001_0003" };
+
+    await askDocumentation("why?", fetchImpl, scope);
+
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ question: "why?", scope });
+  });
+
   it("explains an expired session", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(401, { error: { code: "unauthorized", message: "x" } }));
 

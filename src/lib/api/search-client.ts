@@ -1,4 +1,5 @@
 import type { AgentStep, StopReason } from "@/lib/agent/document-agent";
+import type { ScopeInput } from "@/lib/business/scope";
 import type { EvidenceSource } from "@/types/evidence";
 
 export type AskResult = {
@@ -19,13 +20,17 @@ type AnswersResponse = {
 const UNAVAILABLE = "Search is unavailable right now. Try again.";
 
 /** Browser client for `POST /api/v1/answers`. Errors carry a message that is safe to show to the user. */
-export async function askDocumentation(question: string, fetchImpl: typeof fetch = fetch): Promise<AskResult> {
+export async function askDocumentation(
+  question: string,
+  fetchImpl: typeof fetch = fetch,
+  scope?: ScopeInput,
+): Promise<AskResult> {
   let response: Response;
   try {
     response = await fetchImpl("/api/v1/answers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(scope ? { question, scope } : { question }),
     });
   } catch {
     throw new Error(UNAVAILABLE);

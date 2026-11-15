@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { AgentStep, StopReason } from "@/lib/agent/document-agent";
 import { askDocumentation, type AskResult } from "@/lib/api/search-client";
+import type { ScopeInput } from "@/lib/business/scope";
 import { evidenceKey } from "@/lib/rag/evidence";
 import type { EvidenceSource } from "@/types/evidence";
 import { Composer } from "./composer";
@@ -11,6 +12,7 @@ import { EvidenceCitationList } from "./evidence-citation-card";
 type Turn = {
   id: number;
   question: string;
+  scope: ScopeInput | null;
   status: "loading" | "done" | "error";
   sources: EvidenceSource[];
   answer: string | null;
@@ -28,13 +30,26 @@ const EXAMPLES = [
 const focusRing = "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f6b442]";
 
 type ChatWorkspaceProps = {
-  /** Answers a question with evidence. Defaults to the documentation search API. */
-  ask?: (question: string) => Promise<AskResult>;
+  /** Answers a question with evidence, optionally inside an investigation scope. Defaults to the answers API. */
+  ask?: (question: string, scope?: ScopeInput) => Promise<AskResult>;
 };
 
-export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
+const defaultAsk = (question: string, scope?: ScopeInput) => askDocumentation(question, fetch, scope);
+const EMPTY_SCOPE = { accountId: "", environment: "", paymentId: "" };
+
+function toScope(fields: typeof EMPTY_SCOPE): ScopeInput | null {
+  const scope: ScopeInput = {};
+  if (fields.accountId.trim()) scope.accountId = fields.accountId.trim();
+  if (fields.environment === "production" || fields.environment === "sandbox") scope.environment = fields.environment;
+  if (fields.paymentId.trim()) scope.paymentId = fields.paymentId.trim();
+  return Object.keys(scope).length > 0 ? scope : null;
+}
+
+export function ChatWorkspace({ ask = defaultAsk }: ChatWorkspaceProps) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [selected, setSelected] = useState<EvidenceSource | null>(null);
+  const [scopeOpen, setScopeOpen] = useState(false);
+  const [scopeFields, setScopeFields] = useState(EMPTY_SCOPE);
   const nextId = useRef(1);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -48,10 +63,10 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
     setTurns((current) => current.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
   }
 
-  async function run(id: number, question: string) {
+  async function run(id: number, question: string, scope: ScopeInput | null) {
     update(id, { status: "loading", error: null });
     try {
-      const result = await ask(question);
+      const result = scope ? await ask(question, scope) : await ask(question);
       update(id, {
         status: "done",
         sources: result.sources,
@@ -67,13 +82,18 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
   function submit(question: string) {
     if (busy) return;
     const id = nextId.current++;
-    setTurns((current) => [...current, { id, question, status: "loading", sources: [], answer: null, stopReason: null, steps: [], error: null }]);
-    void run(id, question);
+    const scope = toScope(scopeFields);
+    setTurns((current) => [
+      ...current,
+      { id, question, scope, status: "loading", sources: [], answer: null, stopReason: null, steps: [], error: null },
+    ]);
+    void run(id, question, scope);
   }
 
   function reset() {
     setTurns([]);
     setSelected(null);
+    setScopeFields(EMPTY_SCOPE);
     composerRef.current?.focus();
   }
 
@@ -129,21 +149,34 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
           <ol aria-label="Conversation" className="flex flex-col gap-5">
             {turns.map((turn) => (
               <li key={turn.id} className="flex flex-col gap-4">
-                <p className="max-w-[92%] self-end rounded-[15px_15px_3px_15px] bg-[#2459d3] px-4.5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap text-white sm:max-w-[79%]">
-                  {turn.question}
-                </p>
+                <div className="flex max-w-[92%] flex-col items-end gap-1 self-end sm:max-w-[79%]">
+                  {turn.scope ? (
+                    <span className="rounded-md bg-[#e7eefc] px-2 py-0.5 font-mono text-[11px] text-[#1748a3]">
+                      {[turn.scope.accountId, turn.scope.environment, turn.scope.paymentId].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
+                  <p className="rounded-[15px_15px_3px_15px] bg-[#2459d3] px-4.5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap text-white">
+                    {turn.question}
+                  </p>
+                </div>
                 <TurnAnswer
                   turn={turn}
                   selectedId={selected ? evidenceKey(selected) : null}
                   onSelect={setSelected}
-                  onRetry={() => void run(turn.id, turn.question)}
+                  onRetry={() => void run(turn.id, turn.question, turn.scope)}
                 />
               </li>
             ))}
           </ol>
         )}
 
-        <div ref={endRef} className="sticky bottom-0 mt-auto bg-[#f2f5fa] pt-2 pb-4">
+        <div ref={endRef} className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-[#f2f5fa] pt-2 pb-4">
+          <ScopeFields
+            open={scopeOpen}
+            onToggle={() => setScopeOpen((open) => !open)}
+            fields={scopeFields}
+            onChange={setScopeFields}
+          />
           <Composer ref={composerRef} busy={busy} onSubmit={submit} />
         </div>
       </main>
@@ -167,6 +200,70 @@ export function ChatWorkspace({ ask = askDocumentation }: ChatWorkspaceProps) {
           <p className="text-[13px] text-[#75839a]">Select a source to see its excerpt here.</p>
         )}
       </aside>
+    </div>
+  );
+}
+
+type ScopeFieldsProps = {
+  open: boolean;
+  onToggle: () => void;
+  fields: typeof EMPTY_SCOPE;
+  onChange: (fields: typeof EMPTY_SCOPE) => void;
+};
+
+/** Optional investigation scope (Flow B). The account and environment are never chosen by the model. */
+function ScopeFields({ open, onToggle, fields, onChange }: ScopeFieldsProps) {
+  const input =
+    "w-full rounded-[8px] border border-[#d9e3f0] bg-white px-2.5 py-2 font-mono text-[13px] text-[#182539] focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-[#f6b442]";
+  const active = toScope(fields);
+  return (
+    <div className="rounded-[12px] border border-[#d9e3f0] bg-white">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="scope-fields"
+        onClick={onToggle}
+        className={`flex w-full items-center justify-between rounded-[12px] px-3 py-2 text-left text-sm font-semibold text-[#1748a3] ${focusRing}`}
+      >
+        Investigate a payment
+        <span aria-hidden="true" className="text-xs font-normal text-[#75839a]">
+          {active ? [active.accountId, active.environment, active.paymentId].filter(Boolean).join(" · ") : open ? "▲" : "▼"}
+        </span>
+      </button>
+      {open ? (
+        <div id="scope-fields" className="grid grid-cols-1 gap-2 px-3 pb-3 sm:grid-cols-3">
+          <label className="text-xs text-[#51627b]">
+            Account ID
+            <input
+              className={input}
+              value={fields.accountId}
+              placeholder="acct_bg_001"
+              onChange={(event) => onChange({ ...fields, accountId: event.target.value })}
+            />
+          </label>
+          <label className="text-xs text-[#51627b]">
+            Environment
+            <select
+              className={input}
+              value={fields.environment}
+              onChange={(event) => onChange({ ...fields, environment: event.target.value })}
+            >
+              <option value="">Select…</option>
+              <option value="production">production</option>
+              <option value="sandbox">sandbox</option>
+            </select>
+          </label>
+          <label className="text-xs text-[#51627b]">
+            Payment ID
+            <input
+              className={input}
+              value={fields.paymentId}
+              placeholder="pay_bg_001_0003"
+              onChange={(event) => onChange({ ...fields, paymentId: event.target.value })}
+            />
+          </label>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -266,6 +363,7 @@ const STOP_PILLS: Record<StopReason, { text: string; className: string }> = {
   no_evidence: { text: "No documentation found", className: "bg-[#fff6e5] text-[#8a5a00]" },
   budget_exhausted: { text: "Stopped at the step limit", className: "bg-[#fff6e5] text-[#8a5a00]" },
   error: { text: "Assistant unavailable", className: "bg-[#fdeeee] text-[#8a2c2c]" },
+  needs_scope: { text: "Needs more information", className: "bg-[#eaf1fd] text-[#1748a3]" },
 };
 
 const STEP_DOT: Record<AgentStep["outcome"], string> = {

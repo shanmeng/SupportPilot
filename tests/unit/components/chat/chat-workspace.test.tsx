@@ -191,6 +191,41 @@ describe("ChatWorkspace", () => {
     expect(await screen.findByText(/Stopped at the step limit/)).toBeInTheDocument();
   });
 
+  it("sends the payment scope with the question when investigation fields are filled", async () => {
+    const ask = vi.fn().mockResolvedValue({ sources: [] });
+    const { user, composer } = setup(ask);
+
+    await user.click(screen.getByRole("button", { name: "Investigate a payment" }));
+    await user.type(screen.getByLabelText("Account ID"), "acct_bg_001");
+    await user.selectOptions(screen.getByLabelText("Environment"), "production");
+    await user.type(screen.getByLabelText("Payment ID"), "pay_bg_001_0003");
+    await user.type(composer, "Why was no webhook delivered?{Enter}");
+
+    expect(ask).toHaveBeenCalledWith("Why was no webhook delivered?", {
+      accountId: "acct_bg_001",
+      environment: "production",
+      paymentId: "pay_bg_001_0003",
+    });
+    const conversation = await screen.findByRole("list", { name: "Conversation" });
+    expect(within(conversation).getByText("acct_bg_001 · production · pay_bg_001_0003")).toBeInTheDocument();
+  });
+
+  it("shows which scope fields are still needed", async () => {
+    const { user, composer } = setup(
+      vi.fn().mockResolvedValue({
+        answer: "To investigate a payment I need the environment, payment ID. I won't guess them or look in other accounts.",
+        stopReason: "needs_scope",
+        steps: [],
+        sources: [],
+      }),
+    );
+
+    await user.type(composer, "Why did pay_bg_001_0003 fail?{Enter}");
+
+    expect(await screen.findByText("Needs more information")).toBeInTheDocument();
+    expect(screen.getByText(/I need the environment, payment ID/)).toBeInTheDocument();
+  });
+
   it("asks an example question when it is clicked", async () => {
     const ask = vi.fn().mockResolvedValue({ sources: [] });
     const { user } = setup(ask);

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   customType,
   date,
   index,
@@ -12,6 +13,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
+import { environments } from "@/lib/business/scope";
 import { EMBEDDING_DIMENSIONS } from "@/lib/rag/embedder";
 import { documentAuthorities, documentKinds } from "@/lib/rag/knowledge-document";
 
@@ -86,3 +88,88 @@ export const documentChunks = pgTable(
 
 export type DocumentRow = typeof documents.$inferSelect;
 export type DocumentChunkRow = typeof documentChunks.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Synthetic FlowPay business records (read-only for the app; loaded by the importer).
+// Every record carries account_id + environment so queries can always be scoped.
+
+export const environment = pgEnum("environment", environments);
+
+const ts = (name: string) => timestamp(name, { withTimezone: true });
+
+export const accounts = pgTable("accounts", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  productionStatus: text("production_status").notNull(),
+  currentPlan: text("current_plan"),
+  createdAt: ts("created_at").notNull(),
+});
+
+export const webhookEndpoints = pgTable(
+  "webhook_endpoints",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+    environment: environment("environment").notNull(),
+    urlHost: text("url_host").notNull(),
+    status: text("status").notNull(),
+    apiVersion: text("api_version"),
+    createdAt: ts("created_at").notNull(),
+    disabledAt: ts("disabled_at"),
+  },
+  (table) => [index("webhook_endpoints_scope_idx").on(table.accountId, table.environment)],
+);
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+    environment: environment("environment").notNull(),
+    amount: bigint("amount", { mode: "number" }).notNull(),
+    currency: text("currency").notNull(),
+    status: text("status").notNull(),
+    apiVersion: text("api_version"),
+    failureCode: text("failure_code"),
+    failureCategory: text("failure_category"),
+    createdAt: ts("created_at").notNull(),
+    updatedAt: ts("updated_at").notNull(),
+    succeededAt: ts("succeeded_at"),
+  },
+  (table) => [index("payments_scope_idx").on(table.accountId, table.environment)],
+);
+
+export const events = pgTable(
+  "events",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+    environment: environment("environment").notNull(),
+    eventType: text("event_type").notNull(),
+    apiVersion: text("api_version"),
+    objectType: text("object_type").notNull(),
+    objectId: text("object_id"),
+    occurredAt: ts("occurred_at").notNull(),
+  },
+  (table) => [index("events_scope_object_idx").on(table.accountId, table.environment, table.objectId)],
+);
+
+export const webhookDeliveries = pgTable(
+  "webhook_deliveries",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+    endpointId: text("endpoint_id").notNull().references(() => webhookEndpoints.id, { onDelete: "cascade" }),
+    // Copied from the event at import time so every query can filter by scope directly.
+    accountId: text("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+    environment: environment("environment").notNull(),
+    status: text("status").notNull(),
+    attemptCount: integer("attempt_count").notNull(),
+    firstAttemptAt: ts("first_attempt_at"),
+    lastAttemptAt: ts("last_attempt_at"),
+    nextAttemptAt: ts("next_attempt_at"),
+    deliveredAt: ts("delivered_at"),
+    terminalReason: text("terminal_reason"),
+  },
+  (table) => [index("webhook_deliveries_scope_event_idx").on(table.accountId, table.environment, table.eventId)],
+);
