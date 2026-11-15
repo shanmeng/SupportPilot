@@ -266,6 +266,7 @@ const STOP_PILLS: Record<StopReason, { text: string; className: string }> = {
   no_evidence: { text: "No documentation found", className: "bg-[#fff6e5] text-[#8a5a00]" },
   budget_exhausted: { text: "Stopped at the step limit", className: "bg-[#fff6e5] text-[#8a5a00]" },
   error: { text: "Assistant unavailable", className: "bg-[#fdeeee] text-[#8a2c2c]" },
+  needs_scope: { text: "Needs more information", className: "bg-[#eaf1fd] text-[#1748a3]" },
 };
 
 const STEP_DOT: Record<AgentStep["outcome"], string> = {
