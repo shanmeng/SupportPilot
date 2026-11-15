@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { testLoginEnabled } from "@/auth";
 import { SignInPanel } from "@/components/auth/sign-in-panel";
@@ -11,6 +12,8 @@ export const metadata: Metadata = { title: "Sign in · SupportPilot" };
 const testAction = testLoginEnabled ? signInAsTestUser : undefined;
 
 async function SignInContent({ searchParams }: { searchParams: PageProps<"/signin">["searchParams"] }) {
+  // Session reads must happen at request time, not during prerendering.
+  await connection();
   if (await getSessionUser()) redirect("/");
   const { error } = await searchParams;
   return (

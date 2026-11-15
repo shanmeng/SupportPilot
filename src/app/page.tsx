@@ -1,10 +1,14 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
+import { ChatWorkspace } from "@/components/chat/chat-workspace";
 import { requirePageUser } from "@/lib/auth/session";
 import { signOutAction } from "./actions";
 
 /** Server-side gate: renders only for a valid session, otherwise redirects to /signin. */
 async function Dashboard() {
+  // Session reads must happen at request time, not during prerendering.
+  await connection();
   const user = await requirePageUser();
   return (
     <>
@@ -17,12 +21,7 @@ async function Dashboard() {
         </p>
         <UserMenu user={user} signOutAction={signOutAction} />
       </header>
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-2 px-4 py-8 sm:px-8">
-        <h1 className="text-2xl font-bold tracking-tight">SupportPilot</h1>
-        <p className="text-sm text-[#75839a]">
-          Agentic RAG technical support assistant. The dashboard is built in US-03.
-        </p>
-      </main>
+      <ChatWorkspace />
     </>
   );
 }
