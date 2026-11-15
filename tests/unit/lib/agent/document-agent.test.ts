@@ -125,10 +125,10 @@ describe("runDocumentAgent", () => {
 
   it("stops at the tool budget and tells the model to answer with what it has", async () => {
     const model = scriptedModel([
-      { toolCalls: [call("searchDocuments", { query: "a" })] },
-      { toolCalls: [call("searchDocuments", { query: "b" })] },
-      { toolCalls: [call("searchDocuments", { query: "c" })] },
-      { toolCalls: [call("searchDocuments", { query: "d" })] },
+      { toolCalls: [call("searchDocuments", { query: "retry" })] },
+      { toolCalls: [call("searchDocuments", { query: "gone endpoint" })] },
+      { toolCalls: [call("searchDocuments", { query: "delivery" })] },
+      { toolCalls: [call("searchDocuments", { query: "signature" })] },
       { text: "Retries stop [KB-FIX-001]." },
     ]);
     const tools = fakeTools();
