@@ -26,7 +26,7 @@ function implementedOperations(): [string, string][] {
 
 type Operation = { security?: unknown[]; responses: Record<string, unknown> };
 const operation = (path: string, method: string) =>
-  (openApiSpec.paths as Record<string, Record<string, Operation>>)[path]?.[method];
+  (openApiSpec.paths as unknown as Record<string, Record<string, Operation>>)[path]?.[method];
 
 describe("OpenAPI spec", () => {
   it("is OpenAPI 3.1 with a title and version", () => {
