@@ -92,6 +92,13 @@ Acceptance criteria are the checklists in the linked issues.
 ## Standups
 Format: done since last standup / next / blockers. **Written by the owner.**
 
+### Blockers during the sprint (owner)
+- Comparing model providers to decide which one to use.
+- Comparing the cost-effectiveness of different OpenAI models.
+- Applying for and configuring the OpenAI API key.
+- Production data had to be imported manually from my own terminal.
+- The Neon branch limit was reached a second time.
+
 ### Standup 1 — Nov 14 (evening, sprint planning)
 - **Done:**
 - **Next:**

@@ -43,6 +43,12 @@ Acceptance criteria for each story are the checklists in the linked issues.
 ## Standups
 Format: done since last standup / next / blockers.
 
+### Blockers during the sprint (owner)
+- Limited development time alongside an internship at a fast-paced startup.
+- The PR #26 preview deployment failed because the Neon Free plan's branch limit was reached.
+- Auth environment variables were missing on Vercel at first.
+- No OpenAI API key yet.
+
 ### Standup 1 — Nov 12
 - **Done:** HW3 deliverables (rules file, PRD, mockup, A/B experiment). Reviewed P2 requirements against repo state; re-baselined Sprint 1/2 milestones.
 - **Next:** #1 scaffold and database connection, #6 test foundation and first CI workflow.
