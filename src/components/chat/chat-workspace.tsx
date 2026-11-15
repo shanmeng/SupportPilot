@@ -353,7 +353,9 @@ function TurnAnswer({ turn, selectedId, onSelect, onRetry }: TurnAnswerProps) {
     return (
       <div role="status" className={`${card} text-[#586982]`}>
         <span aria-hidden="true" className="mr-2 inline-block size-2 animate-pulse rounded-full bg-[#2459d3]" />
-        Searching documentation…
+        {turn.scope?.paymentId && turn.scope.accountId && turn.scope.environment
+          ? `Investigating ${turn.scope.paymentId} in ${turn.scope.accountId} (${turn.scope.environment})…`
+          : "Searching documentation…"}
       </div>
     );
   }
@@ -396,6 +398,8 @@ function TurnAnswer({ turn, selectedId, onSelect, onRetry }: TurnAnswerProps) {
             {turn.steps.map((step, index) => (
               <li
                 key={index}
+                aria-label={`${step.label}: ${STEP_OUTCOME_TEXT[step.outcome]}`}
+                title={STEP_OUTCOME_TEXT[step.outcome]}
                 className="inline-flex items-center gap-1.5 rounded-md bg-[#f2f5fa] px-2 py-1 text-[11px] text-[#51627b]"
               >
                 <span aria-hidden="true" className={`size-1.5 rounded-full ${STEP_DOT[step.outcome]}`} />
@@ -435,6 +439,15 @@ const STOP_PILLS: Record<StopReason, { text: string; className: string }> = {
   budget_exhausted: { text: "Stopped at the step limit", className: "bg-[#fff6e5] text-[#8a5a00]" },
   error: { text: "Assistant unavailable", className: "bg-[#fdeeee] text-[#8a2c2c]" },
   needs_scope: { text: "Needs more information", className: "bg-[#eaf1fd] text-[#1748a3]" },
+};
+
+const STEP_OUTCOME_TEXT: Record<AgentStep["outcome"], string> = {
+  ok: "found results",
+  empty: "nothing found",
+  duplicate: "skipped (duplicate)",
+  rejected: "rejected (invalid request)",
+  error: "failed",
+  budget: "skipped (step limit reached)",
 };
 
 const STEP_DOT: Record<AgentStep["outcome"], string> = {
