@@ -2,17 +2,39 @@
 
 **Agentic RAG Technical Support Assistant**
 
-## Development Status
-SupportPilot is currently in the planning and development setup phase as part of Project 2.
+**Live app:** https://support-pilot-two.vercel.app · **API docs:** [/api-docs](https://support-pilot-two.vercel.app/api-docs) ([OpenAPI JSON](https://support-pilot-two.vercel.app/api/v1/openapi.json))
 
-The repository includes the Product Requirements Document (PRD), UI prototype, development guidelines, and Agile sprint planning materials. These artifacts establish the foundation for AI-assisted development using VS Code and Claude Code.
+SupportPilot helps technical-support engineers troubleshoot payments and webhooks on the **synthetic** FlowPay platform. It answers documentation questions with an AI agent that cites the exact documents it retrieved, and it investigates a specific payment read-only, inside one account and environment, citing the real record IDs.
 
-Development is organized into two sprints:
+## Features and roles
 
-- **Sprint 1:** Application foundation, authentication, chat interface, knowledge retrieval, and evidence citations.
-- **Sprint 2:** Agentic RAG workflows, payment investigation tools, automated testing, CI/CD, and deployment.
+| Feature | What it does |
+|---|---|
+| **Documentation Q&A** (Flow A) | Bounded agent (at most 5 model / 3 tool calls) searches and reads 37 English FlowPay documents (hybrid pgvector + full-text). Answers cite document IDs; citations are verified against what the tools returned; no evidence → no AI text |
+| **Payment & webhook investigation** (Flow B) | Engineer gives account ID, environment and payment ID; tools bound to that scope read the payment, events, webhook deliveries and endpoint (read-only, allowlisted, no model-generated SQL). Missing scope → asks for it (Flow C) |
+| **Evidence citation cards** | Exact ID, title, kind (Document / Record) and excerpt; "No verified sources" when empty; keyboard-selectable into the evidence panel |
+| **Saved investigations** | Every answer saved; "Recent cases" sidebar; reopen with the original evidence |
+| **Agent transparency** | Each answer shows the agent's steps and why it stopped (answered, no evidence, step limit, needs more information) |
 
-Implementation progress will be tracked through GitHub Issues and the Project Board.
+| Role | How | Access |
+|---|---|---|
+| **Engineer** | Default for GitHub sign-in | Own saved investigations |
+| **Lead** | GitHub login in `LEAD_GITHUB_LOGINS` | All engineers' investigations, with owner names |
+
+Previews (not production) also offer test users `e2e-engineer` / `e2e-lead`.
+
+## Documentation
+
+| Document | |
+|---|---|
+| [Architecture](docs/architecture.md) | System and answer-flow diagrams, Agentic RAG stages S1–S3, roles, delivery pipeline |
+| [Database](docs/database.md) | ER diagram, migrations, design notes |
+| [Setup and deployment](docs/deployment.md) | Local setup, environment variables, production setup, release and rollback |
+| [API](https://support-pilot-two.vercel.app/api-docs) | OpenAPI 3.1 + Swagger UI (`src/lib/api/openapi.ts`) |
+| [AI workflow](docs/ai-workflow.md) | How Claude Code was used: context engineering, AI-assisted TDD, mistakes and guardrails |
+| [Sprint 1](docs/sprints/sprint-1.md) · [Sprint 2](docs/sprints/sprint-2.md) | Plans, estimates, standups, reviews, retrospectives |
+| [Contribution log](docs/contribution-log.md) | Work per issue/PR (solo project) |
+| [PRD](docs/PRD.md) · [Mockup](docs/mockups/dashboard.html) | Requirements and approved UI concept |
 
 ## HW3: Context Engineering Evidence
 The `main` branch holds the project rules, design documents and HW3 write-ups. The two experiment implementations of **US-05 Evidence Citation Cards** live on separate branches, both created from baseline commit [`3155fc2`](https://github.com/shanmeng/SupportPilot/commit/3155fc2).
@@ -138,6 +160,10 @@ Preview branches of closed PRs are deleted by `neon-preview-cleanup.yml`. It nee
 ## API
 | Method | Path | Auth | Description |
 |---|---|---|---|
+| POST | `/api/v1/answers` | Session | Documentation answer (agent) or, with `scope: { accountId, environment, paymentId }`, a scoped payment investigation. Returns `mode`, `answer`, verified `citations`, `steps`, `stopReason` and `investigationId`; `needs_scope` + `missingFields` when the scope is incomplete. |
+| GET | `/api/v1/investigations` | Session | Saved investigations, newest first (engineer: own; lead: all). `?limit=1..50&cursor=` |
+| GET | `/api/v1/investigations/{id}` | Session | One saved investigation; `404` if missing or another engineer's |
+| GET | `/api/v1/openapi.json` | Public | OpenAPI 3.1 document (rendered at `/api-docs`) |
 | GET | `/api/v1/me` | Session | The signed-in user: `id`, `name`, `email`, `image`, `role` (`engineer` or `lead`). `401` when signed out or the session is invalid. |
 | GET/POST | `/api/auth/*` | — | Auth.js sign-in, callback, session and sign-out endpoints |
 | POST | `/api/v1/search` | Session | Documentation search. Body `{ "query": string (2–500 chars), "limit"?: 1–10 (default 5) }`. Returns `{ "mode": "hybrid" \| "keyword", "results": [{ "id", "chunkId", "title", "kind", "authority", "section", "excerpt", "score" }] }`, at most one result per document; `results` is empty when nothing matches. `400 invalid_request` for invalid input. |
@@ -190,9 +216,9 @@ Environment variables are validated at startup by `src/lib/env.ts`; error messag
 ## Roadmap
 Re-baselined on Nov 12, 2026 (original plan: Sprint 1 Oct 30–Nov 5, Sprint 2 Nov 6–10).
 
-- Sprint 1: Nov 12–13, 2026 — [plan, standups, retro](docs/sprints/sprint-1.md)
-- Sprint 2: Nov 14–15, 2026
+- Sprint 1: Nov 12–14, 2026 (due Nov 13; finished one day late) — [plan, standups, review, retro](docs/sprints/sprint-1.md)
+- Sprint 2: Nov 14–15, 2026 — [plan, standups, review, retro](docs/sprints/sprint-2.md)
 - Project 2 due: Nov 15, 2026, 11:59 pm
 
 ## Attribution and dataset
-An educational Python/FastAPI Agentic RAG reference. This project plans an independently built TypeScript web app. The corresponding dataset is distributed separately; do not commit its archive, business snapshot, or embeddings before verifying the rights to redistribute them publicly.
+An educational Python/FastAPI Agentic RAG reference inspired the design. This project is an independently built TypeScript web app. The corresponding dataset is distributed separately; do not commit its archive, business snapshot, or embeddings before verifying the rights to redistribute them publicly.
