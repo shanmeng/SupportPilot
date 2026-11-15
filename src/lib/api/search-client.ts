@@ -8,6 +8,8 @@ export type AskResult = {
   stopReason?: StopReason | null;
   steps?: AgentStep[];
   sources: EvidenceSource[];
+  /** ID of the saved investigation, when the answer was saved. */
+  investigationId?: string | null;
 };
 
 type AnswersResponse = {
@@ -15,6 +17,7 @@ type AnswersResponse = {
   stopReason: StopReason | null;
   steps: AgentStep[];
   citations: EvidenceSource[];
+  investigationId?: string | null;
 };
 
 const UNAVAILABLE = "Search is unavailable right now. Try again.";
@@ -44,5 +47,11 @@ export async function askDocumentation(
   if (!response.ok) throw new Error(UNAVAILABLE);
 
   const body = (await response.json()) as AnswersResponse;
-  return { answer: body.answer, stopReason: body.stopReason, steps: body.steps, sources: body.citations };
+  return {
+    answer: body.answer,
+    stopReason: body.stopReason,
+    steps: body.steps,
+    sources: body.citations,
+    ...(body.investigationId !== undefined ? { investigationId: body.investigationId } : {}),
+  };
 }

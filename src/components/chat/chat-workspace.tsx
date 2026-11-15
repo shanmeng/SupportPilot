@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AgentStep, StopReason } from "@/lib/agent/document-agent";
+import { historyClient, type HistoryClient } from "@/lib/api/investigations-client";
 import { askDocumentation, type AskResult } from "@/lib/api/search-client";
 import type { ScopeInput } from "@/lib/business/scope";
+import type { InvestigationSummary } from "@/lib/investigations/types";
 import { evidenceKey } from "@/lib/rag/evidence";
 import type { EvidenceSource } from "@/types/evidence";
 import { Composer } from "./composer";
@@ -32,6 +34,8 @@ const focusRing = "focus-visible:outline-3 focus-visible:outline-offset-2 focus-
 type ChatWorkspaceProps = {
   /** Answers a question with evidence, optionally inside an investigation scope. Defaults to the answers API. */
   ask?: (question: string, scope?: ScopeInput) => Promise<AskResult>;
+  /** Saved investigations. Defaults to the investigations API. */
+  history?: HistoryClient;
 };
 
 const defaultAsk = (question: string, scope?: ScopeInput) => askDocumentation(question, fetch, scope);
@@ -45,11 +49,24 @@ function toScope(fields: typeof EMPTY_SCOPE): ScopeInput | null {
   return Object.keys(scope).length > 0 ? scope : null;
 }
 
-export function ChatWorkspace({ ask = defaultAsk }: ChatWorkspaceProps) {
+export function ChatWorkspace({ ask = defaultAsk, history = historyClient }: ChatWorkspaceProps) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [selected, setSelected] = useState<EvidenceSource | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
   const [scopeFields, setScopeFields] = useState(EMPTY_SCOPE);
+  const [recent, setRecent] = useState<InvestigationSummary[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    history
+      .list()
+      .then((items) => active && setRecent(items))
+      .catch(() => active && setHistoryError("Recent cases could not be loaded."));
+    return () => {
+      active = false;
+    };
+  }, [history]);
   const nextId = useRef(1);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -74,6 +91,13 @@ export function ChatWorkspace({ ask = defaultAsk }: ChatWorkspaceProps) {
         stopReason: result.stopReason ?? null,
         steps: result.steps ?? [],
       });
+      const investigationId = result.investigationId;
+      if (investigationId) {
+        setRecent((current) => [
+          { id: investigationId, question, scope, stopReason: result.stopReason ?? null, ownerName: null, createdAt: new Date().toISOString() },
+          ...current.filter((item) => item.id !== investigationId),
+        ]);
+      }
     } catch (error) {
       update(id, { status: "error", error: error instanceof Error ? error.message : "Something went wrong." });
     }
@@ -88,6 +112,31 @@ export function ChatWorkspace({ ask = defaultAsk }: ChatWorkspaceProps) {
       { id, question, scope, status: "loading", sources: [], answer: null, stopReason: null, steps: [], error: null },
     ]);
     void run(id, question, scope);
+  }
+
+  async function openCase(id: string) {
+    if (busy) return;
+    const turnId = nextId.current++;
+    setSelected(null);
+    setTurns([{ id: turnId, question: "Opening saved case…", scope: null, status: "loading", sources: [], answer: null, stopReason: null, steps: [], error: null }]);
+    try {
+      const saved = await history.get(id);
+      setTurns([
+        {
+          id: turnId,
+          question: saved.question,
+          scope: saved.scope,
+          status: "done",
+          sources: saved.citations,
+          answer: saved.answer,
+          stopReason: saved.stopReason,
+          steps: saved.steps,
+          error: null,
+        },
+      ]);
+    } catch (error) {
+      update(turnId, { status: "error", error: error instanceof Error ? error.message : "Could not open the case." });
+    }
   }
 
   function reset() {
@@ -113,7 +162,29 @@ export function ChatWorkspace({ ask = defaultAsk }: ChatWorkspaceProps) {
         <p className="mt-7 mb-3 hidden px-2 text-[11px] font-extrabold tracking-[0.09em] text-[#7c8aa2] uppercase md:block">
           Recent cases
         </p>
-        <p className="hidden px-2 text-[13px] text-[#75839a] md:block">No saved investigations yet</p>
+        {historyError ? (
+          <p className="hidden px-2 text-[13px] text-[#8a2c2c] md:block">{historyError}</p>
+        ) : recent.length === 0 ? (
+          <p className="hidden px-2 text-[13px] text-[#75839a] md:block">No saved investigations yet</p>
+        ) : (
+          <ul aria-label="Recent cases" className="mt-2 flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
+            {recent.map((item) => (
+              <li key={item.id} className="min-w-0 shrink-0 md:shrink">
+                <button
+                  type="button"
+                  aria-label={`Open case: ${item.question}`}
+                  onClick={() => void openCase(item.id)}
+                  className={`block w-full max-w-56 truncate rounded-[9px] px-3 py-2 text-left text-[13px] text-[#51627b] hover:bg-[#e7eefc] hover:text-[#1748a3] md:max-w-none ${focusRing}`}
+                >
+                  {item.question}
+                  {item.ownerName ? (
+                    <span className="block truncate text-[11px] text-[#8a97aa]">{item.ownerName}</span>
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </aside>
 
       <main className="flex min-w-0 flex-col gap-6 px-4 pt-6 sm:px-[max(22px,6%)] md:pt-9">
