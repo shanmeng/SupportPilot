@@ -21,6 +21,18 @@ describe("toExcerpt", () => {
     expect(excerpt.length).toBeLessThanOrEqual(21);
   });
 
+  it("prefers prose over a leading code block", () => {
+    const content = "## Endpoint\n\n```http\nPOST /v1/webhook_endpoints\nGET /v1/webhook_endpoints/{id}\n```\n\nEndpoints belong to one account and environment.";
+
+    expect(toExcerpt(content)).toBe("Endpoints belong to one account and environment.");
+  });
+
+  it("falls back to the code text when a chunk has nothing else", () => {
+    const content = "## Endpoint\n\n```http\nPOST /v1/webhook_endpoints\n```";
+
+    expect(toExcerpt(content)).toBe("POST /v1/webhook_endpoints");
+  });
+
   it("only contains text from the source (no invented words)", () => {
     const content = "## Gone endpoints\n\nIf an endpoint responds with HTTP 410 Gone, retries stop immediately.";
 
