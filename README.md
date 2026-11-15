@@ -109,10 +109,13 @@ GitHub Actions run on every pull request and on pushes to `main`:
 | `ci.yml` | **Lint + typecheck** → **unit tests** (coverage summary + report artifact) and **integration tests** (pgvector service container) in parallel → **production build**; **security scan** in parallel: `npm audit` (runtime deps fail on moderate, all deps on high), gitleaks secret scan of full history, dependency review on PRs |
 | `codeql.yml` | CodeQL `security-extended` analysis on PRs, `main` and weekly |
 | `dependabot.yml` | Weekly npm and GitHub Actions update PRs |
+| `neon-preview-cleanup.yml` | When a PR is merged or closed, deletes its Neon database branch `preview/<git-branch>` (never `main`); can also be run by hand for a given git branch |
 
 Deploy previews and production deployment run through the Vercel GitHub integration: every PR gets a preview URL, and every push to `main` deploys to production. The database is PostgreSQL hosted on Neon (Vercel Marketplace integration); each preview deployment gets its own Neon database branch. Vercel runs `npm run vercel-build`, which applies pending migrations (`drizzle-kit migrate`, using `DATABASE_URL_UNPOOLED` when available) before `next build`, so the schema always matches the deployed code.
 
 Dependabot branches (`dependabot/**`) do not get Vercel previews (`git.deploymentEnabled` in `vercel.json`). Each preview creates a Neon branch, and the Neon Free plan allows 10 branches per project; dependency PRs are fully checked by CI and do not need a live preview.
+
+Preview branches of closed PRs are deleted by `neon-preview-cleanup.yml`. It needs, under **Settings → Secrets and variables → Actions**: the secret `NEON_API_KEY` (a Neon API key) and the variable `NEON_PROJECT_ID` (the Neon project ID, e.g. `mute-tooth-…`).
 
 ## API
 | Method | Path | Auth | Description |
