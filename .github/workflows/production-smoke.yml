@@ -1,0 +1,66 @@
+name: Production smoke test
+
+# Vercel deploys main to production through its Git integration. After each push to main this
+# waits for that deployment to finish and checks the live app from outside, including that the
+# test login is not available in production.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke test production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://support-pilot-two.vercel.app
+    env:
+      BASE_URL: https://support-pilot-two.vercel.app
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for the Vercel production deployment of this commit
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            state="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/status" \
+              --jq '[.statuses[] | select(.context == "Vercel")][0].state // "missing"')"
+            echo "Vercel status: ${state}"
+            case "${state}" in
+              success) exit 0 ;;
+              failure|error) echo "::error::Vercel deployment failed"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Timed out waiting for the Vercel deployment"
+          exit 1
+      - name: Health check reports database and pgvector ok
+        run: |
+          set -euo pipefail
+          body="$(curl -fsS "${BASE_URL}/api/v1/health")"
+          echo "${body}"
+          echo "${body}" | jq -e '.status == "ok" and .checks.database == "ok" and .checks.vector == "ok"' > /dev/null
+      - name: Protected API requires sign-in
+        run: |
+          set -euo pipefail
+          code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/v1/me")"
+          echo "GET /api/v1/me -> ${code}"
+          test "${code}" = "401"
+          code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+            -d '{"question":"webhook retries"}' "${BASE_URL}/api/v1/answers")"
+          echo "POST /api/v1/answers -> ${code}"
+          test "${code}" = "401"
+      - name: Test login is not available in production
+        run: |
+          set -euo pipefail
+          providers="$(curl -fsS "${BASE_URL}/api/auth/providers")"
+          echo "${providers}" | jq -c 'keys'
+          echo "${providers}" | jq -e 'has("github") and (has("test-login") | not)' > /dev/null
