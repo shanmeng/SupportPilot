@@ -80,6 +80,7 @@ npm run dev                  # http://localhost:3000
 | `npm run db:generate` | Generate a migration from `src/lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations in `drizzle/` |
 | `npm run vercel-build` | Used by Vercel only: apply migrations to the target database, then build |
+| `npm run db:import-knowledge` | Import knowledge-base Markdown into `documents` / `document_chunks` (see [Knowledge base](#knowledge-base-and-document-search)) |
 
 ## Testing
 Development follows red → green → refactor: a failing test is committed before the implementation (`test: … (red)` then `feat: … (green)`).
@@ -118,9 +119,31 @@ Dependabot branches (`dependabot/**`) do not get Vercel previews (`git.deploymen
 |---|---|---|---|
 | GET | `/api/v1/me` | Session | The signed-in user: `id`, `name`, `email`, `image`, `role` (`engineer` or `lead`). `401` when signed out or the session is invalid. |
 | GET/POST | `/api/auth/*` | — | Auth.js sign-in, callback, session and sign-out endpoints |
+| POST | `/api/v1/search` | Session | Documentation search. Body `{ "query": string (2–500 chars), "limit"?: 1–10 (default 5) }`. Returns `{ "mode": "hybrid" \| "keyword", "results": [{ "id", "chunkId", "title", "kind", "authority", "section", "excerpt", "score" }] }`, at most one result per document; `results` is empty when nothing matches. `400 invalid_request` for invalid input. |
 | GET | `/api/v1/health` | Public | Readiness: database reachable and pgvector installed. `200 {"status":"ok"}` or `503 {"status":"degraded"}`; never returns error details. |
 
 Errors from `/api/v1` use one shape: `{ "error": { "code": "unauthorized", "message": "…" } }`.
+
+## Knowledge base and document search
+Documentation evidence comes from the FlowPay knowledge base (synthetic). **Only the English translation is imported**; the importer rejects any document whose front matter is not `language: en`. The dataset is distributed separately and is **never committed**.
+
+| Table | Contents |
+|---|---|
+| `documents` | One row per document. `id` is the dataset's own `doc_id` (e.g. `KB-API-029`), never generated; `kind` (`api_doc`, `business_rule`, `troubleshooting`, `support_case`, `release_note`, `migration_guide`), `authority`, rule IDs, content hash |
+| `document_chunks` | Chunks of at most 1000 characters split at Markdown headings; `id` is `<doc_id>#c<NNN>`. `embedding vector(1536)` (HNSW, cosine) is optional; `search_vector` is a generated English `tsvector` (GIN) |
+
+**Search** (`src/lib/rag/search.ts`) combines PostgreSQL full-text search with pgvector similarity using reciprocal rank fusion. Vector hits below a cosine-similarity floor are ignored, so unrelated questions return no results instead of the nearest unrelated document. Without `OPENAI_API_KEY` (or if the embedding call fails) search runs in keyword-only mode. User input is reduced to plain OR-ed words before it reaches `websearch_to_tsquery`, and every value is a bound parameter.
+
+**Import** (Node.js 22.18+; runs TypeScript directly, no extra dependencies):
+
+```bash
+export FLOWPAY_DATASET_PATH=/path/outside/the/repo/flowpay-dataset-en   # contains knowledge/<category>/*.md
+DATABASE_URL=<target database> npm run db:import-knowledge              # or: npm run db:import-knowledge -- <dir>
+```
+
+With `OPENAI_API_KEY` set (in the shell or `.env.local`), chunks are embedded with `text-embedding-3-small`. Unchanged documents are skipped; `--force` re-imports everything. Vercel preview databases are Neon branches of the production database, so import into production once and new previews start with the same documents.
+
+Tests use neither the dataset nor any credentials. The folder `tests/fixtures/knowledge/` holds handwritten synthetic documents, and `tests/support/fake-embedder.ts` is a deterministic hashed bag-of-words embedder.
 
 ## Authentication and roles
 - **Sign-in:** GitHub OAuth through Auth.js v5. Sessions are signed, encrypted JWTs in an HTTP-only cookie, valid for 8 hours.
