@@ -1,0 +1,51 @@
+name: Neon preview cleanup
+
+# The Vercel–Neon integration creates a Neon branch `preview/<git-branch>` for every preview
+# deployment but never deletes it. This removes it when the PR is merged or closed, so the
+# Neon Free plan's branch limit is not reached.
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      git_branch:
+        description: "Git branch whose Neon preview branch should be deleted (without the preview/ prefix)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  delete-preview-branch:
+    name: Delete Neon preview branch
+    # Dependabot branches get no previews (vercel.json) and cannot read repository secrets.
+    if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.head_ref, 'dependabot/') }}
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+      # Passed through env, never interpolated into the script, so branch names cannot inject shell.
+      GIT_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.git_branch || github.head_ref }}
+    steps:
+      - name: Delete the preview branch if it exists
+        run: |
+          set -euo pipefail
+          if [ -z "${NEON_API_KEY}" ] || [ -z "${NEON_PROJECT_ID}" ]; then
+            echo "::error::Set the NEON_API_KEY secret and the NEON_PROJECT_ID variable (README: CI/CD)."
+            exit 1
+          fi
+          branch="preview/${GIT_BRANCH}"
+          case "${branch}" in
+            preview/?*) ;;
+            *) echo "::error::Refusing to delete '${branch}': only preview/ branches are managed here."; exit 1 ;;
+          esac
+
+          api="https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches"
+          auth=(-H "Authorization: Bearer ${NEON_API_KEY}" -H "Accept: application/json")
+          id="$(curl -fsS "${auth[@]}" "${api}" | jq -r --arg name "${branch}" '.branches[] | select(.name == $name) | .id')"
+          if [ -z "${id}" ]; then
+            echo "No Neon branch named ${branch}; nothing to delete."
+            exit 0
+          fi
+          curl -fsS -X DELETE "${auth[@]}" "${api}/${id}" > /dev/null
+          echo "Deleted Neon branch ${branch} (${id})."
