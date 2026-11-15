@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -14,7 +15,9 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 import { environments } from "@/lib/business/scope";
+import type { AgentStep } from "@/lib/agent/run-agent";
 import { EMBEDDING_DIMENSIONS } from "@/lib/rag/embedder";
+import type { EvidenceSource } from "@/types/evidence";
 import { documentAuthorities, documentKinds } from "@/lib/rag/knowledge-document";
 
 export const userRole = pgEnum("user_role", ["engineer", "lead"]);
@@ -172,4 +175,30 @@ export const webhookDeliveries = pgTable(
     terminalReason: text("terminal_reason"),
   },
   (table) => [index("webhook_deliveries_scope_event_idx").on(table.accountId, table.environment, table.eventId)],
+);
+
+// ---------------------------------------------------------------------------
+// Saved investigations (US-09). Engineers read their own; leads read all (canAccessInvestigation).
+
+export const investigations = pgTable(
+  "investigations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    question: text("question").notNull(),
+    accountId: text("account_id"),
+    environment: environment("environment"),
+    paymentId: text("payment_id"),
+    mode: text("mode").notNull(),
+    stopReason: text("stop_reason"),
+    answer: text("answer"),
+    /** Only verified citations, exactly as shown to the engineer. */
+    citations: jsonb("citations").$type<EvidenceSource[]>().notNull().default([]),
+    steps: jsonb("steps").$type<AgentStep[]>().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("investigations_owner_created_idx").on(table.ownerId, table.createdAt, table.id),
+    index("investigations_created_idx").on(table.createdAt, table.id),
+  ],
 );
