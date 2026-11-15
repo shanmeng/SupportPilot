@@ -4,10 +4,13 @@ import { createBusinessTools } from "@/lib/agent/business-tools";
 import { runDocumentAgent } from "@/lib/agent/document-agent";
 import { createDocumentTools } from "@/lib/agent/document-tools";
 import { runInvestigationAgent } from "@/lib/agent/investigation-agent";
+import type { AgentResult } from "@/lib/agent/run-agent";
 import { apiError } from "@/lib/api/errors";
 import { requireApiUser } from "@/lib/auth/session";
 import { deliveryEvidence, eventEvidence, paymentEvidence } from "@/lib/business/evidence";
 import { mentionsRecordId, missingScopeFields, scopeInputSchema, type InvestigationScope } from "@/lib/business/scope";
+import { saveInvestigation } from "@/lib/db/investigations-repository";
+import type { InvestigationInput } from "@/lib/investigations/types";
 import { getChatModel } from "@/lib/llm/responses-client";
 import { getQueryEmbedder } from "@/lib/rag/embedder";
 import { toEvidenceSource } from "@/lib/rag/evidence";
@@ -30,8 +33,9 @@ const headers = { "Cache-Control": "no-store" };
  * A partial scope, or a question that names a record without one, gets the missing fields back (Flow C).
  */
 export async function POST(request: Request) {
-  const { response } = await requireApiUser();
-  if (response) return response;
+  const auth = await requireApiUser();
+  if (auth.response) return auth.response;
+  const user = auth.user;
 
   let body: unknown;
   try {
@@ -44,6 +48,12 @@ export async function POST(request: Request) {
     return apiError(400, "invalid_request", parsed.error.issues.map((issue) => issue.message).join("; "));
   }
   const { question, scope } = parsed.data;
+
+  /** Every completed answer is saved for the signed-in engineer (US-09) and returned with its ID. */
+  async function respond(result: Omit<InvestigationInput, "question" | "scope">) {
+    const { id } = await saveInvestigation(user.id, { question, scope: scope ?? null, ...result });
+    return NextResponse.json({ ...result, removedCitations: [], investigationId: id }, { headers });
+  }
   const embedder = getQueryEmbedder();
   const model = getChatModel();
   const documentTools = createDocumentTools({ embedder });
@@ -60,6 +70,7 @@ export async function POST(request: Request) {
           steps: [],
           removedCitations: [],
           citations: [],
+          investigationId: null,
         },
         { headers },
       );
@@ -78,24 +89,31 @@ export async function POST(request: Request) {
             ...deliveries.map((delivery) => deliveryEvidence(delivery, fullScope)),
           ]
         : [];
-      return NextResponse.json(
-        { mode: "records", answer: null, stopReason: null, steps: [], removedCitations: [], citations },
-        { headers },
-      );
+      return respond({ mode: "records", answer: null, stopReason: null, steps: [], citations });
     }
 
     const result = await runInvestigationAgent(question, fullScope, { model, businessTools, documentTools });
-    return NextResponse.json({ mode: "agent", ...result }, { headers });
+    return respondAgent(result);
   }
 
   if (!model) {
     const { results } = await searchDocuments({ query: question, limit: 5 }, { embedder });
-    return NextResponse.json(
-      { mode: "search", answer: null, stopReason: null, steps: [], removedCitations: [], citations: results.map(toEvidenceSource) },
-      { headers },
-    );
+    return respond({ mode: "search", answer: null, stopReason: null, steps: [], citations: results.map(toEvidenceSource) });
   }
 
   const result = await runDocumentAgent(question, { model, tools: documentTools });
-  return NextResponse.json({ mode: "agent", ...result }, { headers });
+  return respondAgent(result);
+
+  async function respondAgent(result: AgentResult) {
+    const { id } = await saveInvestigation(user.id, {
+      question,
+      scope: scope ?? null,
+      mode: "agent",
+      stopReason: result.stopReason,
+      answer: result.answer,
+      citations: result.citations,
+      steps: result.steps,
+    });
+    return NextResponse.json({ mode: "agent", ...result, investigationId: id }, { headers });
+  }
 }

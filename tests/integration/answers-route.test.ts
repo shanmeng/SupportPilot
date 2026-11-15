@@ -15,6 +15,7 @@ import { createDocumentTools } from "@/lib/agent/document-tools";
 import { getDb } from "@/lib/db/client";
 import { importKnowledgeFiles } from "@/lib/rag/importer";
 import { loadKnowledgeFixtures } from "../support/knowledge-fixtures";
+import { ensureUserRow } from "../support/session-user";
 
 const session = {
   user: { id: "8f6c1a52-0d7e-4d8a-9a43-2f7d0b1e9c11", name: "Octo", email: null, image: null, role: "engineer" },
@@ -45,6 +46,7 @@ function post(body: unknown) {
 
 beforeAll(async () => {
   vi.stubEnv("OPENAI_API_KEY", "");
+  await ensureUserRow(session.user.id);
   await getDb().execute(sql`truncate table documents cascade`);
   await importKnowledgeFiles(loadKnowledgeFixtures(), { embedder: null });
 });
