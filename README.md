@@ -58,7 +58,7 @@ The `main` branch holds the project rules, design documents and HW3 write-ups. T
 - [Comparison worksheet](docs/hw3/comparison.md)
 
 ## Stack
-AI harness: VS Code + Claude Code (approved by the professor as the course IDE harness), guided by [`AGENTS.md`](AGENTS.md).
+AI harness: Claude Code (professor-approved), guided by [`AGENTS.md`](AGENTS.md).
 
 | Layer | Package | Version |
 |---|---|---|
