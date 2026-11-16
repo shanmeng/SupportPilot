@@ -1,6 +1,6 @@
 # Contribution log
 
-**Team:** shanmeng (solo; professor-approved exception). No partner contributions are claimed. Code reviews are recorded as **AI-assisted self-reviews** on each PR, not as partner reviews.
+**Team:** shanmeng (solo, professor-approved). No partner contributions are claimed. Code reviews are recorded as **AI-assisted self-reviews** on each PR, not as partner reviews.
 
 **Commit history** (`main`, merge commits excluded, at the start of US-12): 77 commits, all by the owner (git identity `shanmeng`; 3 made in the GitHub web editor show the owner's display name). 71 carry a `Co-Authored-By: Claude …` trailer, because they were written with Claude Code (see [ai-workflow.md](ai-workflow.md)).
 

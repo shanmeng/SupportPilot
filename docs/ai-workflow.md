@@ -1,6 +1,6 @@
 # AI-assisted workflow
 
-The project was built with **Claude Code** as the AI harness (professor-approved alternative to Antigravity), solo (professor-approved exception). This page records how the harness was used, with real examples and links, including where it went wrong.
+The project was built with **Claude Code** as the AI harness (professor-approved alternative to Antigravity), solo (professor-approved). This page records how the harness was used, with real examples and links, including where it went wrong.
 
 ## Context engineering
 

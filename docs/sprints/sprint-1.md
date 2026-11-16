@@ -4,14 +4,19 @@
 |---|---|
 | **Milestone** | [Sprint 1](https://github.com/shanmeng/SupportPilot/milestone/1) |
 | **Dates** | Nov 12 – Nov 13, 2026 (re-baselined; see [Schedule change](#schedule-change)) |
-| **Team** | shanmeng (solo, professor-approved exception) |
-| **AI harness** | VS Code + Claude Code (professor-approved), guided by [`AGENTS.md`](../../AGENTS.md) |
+| **Team** | shanmeng (solo, professor-approved) |
+| **AI harness** | Claude Code (professor-approved), guided by [`AGENTS.md`](../../AGENTS.md) |
 
 ## Sprint goal
 A signed-in support engineer can ask a documentation question in the dashboard and see an answer backed by evidence citation cards that show real document IDs, titles and excerpts, on a tested Next.js + PostgreSQL foundation.
 
-## Schedule change
-The original plan ran Sprint 1 from Oct 30 to Nov 5 and Sprint 2 from Nov 6 to Nov 10. By Nov 12 no Sprint 1 issue had been closed: the project is being built solo alongside an internship at a fast-paced startup, which left less development time than planned. The professor approved an extension of the Project 2 deadline to Nov 15, 2026, 11:59 pm. On Nov 12 the milestones were re-baselined to Sprint 1 → Nov 13 and Sprint 2 → Nov 15, with scope priorities and a cut list (below) to fit the remaining time. The original dates are kept in each milestone description.
+## Schedule Change
+
+Our original plan was to complete Sprint 1 from Oct 30 to Nov 5 and Sprint 2 from Nov 6 to Nov 10. However, by Nov 12, none of the Sprint 1 issues had been closed. I underestimated how much time I could dedicate to the project while working solo and balancing an internship at a fast-paced startup.
+
+Professor John approved an extension to **Nov 15, 2026, at 11:59 PM**. On Nov 12, I adjusted the milestones, moving Sprint 1 to Nov 13 and Sprint 2 to Nov 15. I also reprioritized the remaining work and identified features to cut if time ran short.
+
+I kept the original dates in the milestone descriptions so the changes are documented.
 
 ## Sprint backlog
 Estimates use story points (Fibonacci: 1, 2, 3, 5, 8) for relative effort and uncertainty, not hours.
@@ -43,20 +48,26 @@ Acceptance criteria for each story are the checklists in the linked issues.
 ## Standups
 Format: done since last standup / next / blockers.
 
+### Blockers during the sprint
+- Limited development time alongside an internship at a fast-paced startup.
+- The PR #26 preview deployment failed because the Neon Free plan's branch limit was reached.
+- Auth environment variables were missing on Vercel at first.
+- No OpenAI API key yet.
+
 ### Standup 1 — Nov 12
-- **Done:** HW3 deliverables (rules file, PRD, mockup, A/B experiment). Reviewed P2 requirements against repo state; re-baselined Sprint 1/2 milestones.
-- **Next:** #1 scaffold and database connection, #6 test foundation and first CI workflow.
-- **Blockers:**
+- **Done:** Went back through my HW3 work, including the rules file, PRD, mockup, and A/B experiment. Reviewed the P2 requirements, checked what was actually in the repo, and adjusted the Sprint 1 and Sprint 2 deadlines.
+- **Next:** Set up the Next.js app and database connection (#1), then work on the testing setup and first CI workflow (#6).
+- **Blockers:** Finding enough development time while balancing my internship.
 
-### Standup 2 — Nov 13 (morning)
-- **Done:**
-- **Next:**
-- **Blockers:**
+### Standup 2 — Nov 13
+- **Done:** Merged US-01 (#15) and US-06 (#16). The Next.js app, Drizzle + pgvector setup, unit/integration tests, and CI with security scanning are in place. Deployed the app to Vercel with Neon, and the health check passed. Also opened PR #26 for GitHub OAuth and user roles. All GitHub checks passed. Prepared English translations of 37 demo-related documents locally, outside the repo.
+- **Next:** Figure out why the Vercel preview for PR #26 failed, configure the auth environment variables, and merge the authentication feature. Then move on to document search (US-04).
+- **Blockers:** The preview deployment failed, and I hadn't figured out why yet. Auth environment variables still needed to be added to Vercel. I also didn't have an OpenAI API key, and time was still tight with my internship.
 
-### Standup 3 — Nov 13 (afternoon)
-- **Done:**
-- **Next:**
-- **Blockers:**
+### Standup 3 — Nov 14 (Afternoon)
+- **Done:** Switched development to Claude Code and checked the project handoff against the repo. Tracked down the PR #26 preview issue: I'd hit the branch limit on Neon's Free plan. Deleted the old preview branches to free up space. Added the Vercel auth environment variables and configured GitHub OAuth for production. Merged US-02 (#26) and tested login on both preview and production. GitHub sign-in worked in production with the Lead role.
+- **Next:** Implement document search (US-04), citation cards (US-05), and the dashboard (US-03), then finish Sprint 1.
+- **Blockers:** Still no OpenAI API key, so I'll start with keyword-based search. The Neon branch limit could also cause more preview issues unless old branches are cleaned up automatically.
 
 ## Sprint review
 **All six stories are done (21 / 21 points).** They were finished on **Nov 14**, one day after the re-baselined Nov 13 due date: US-01 and US-06 on Nov 12; US-02, US-04, US-05 and US-03 on Nov 14 (Pacific time). Every PR was merged with a merge commit after green CI, so the `test: … (red)` → `feat: … (green)` commits stay visible in `main`.
@@ -80,14 +91,11 @@ Completed points: **21 / 21**
 - [#34](https://github.com/shanmeng/SupportPilot/issues/34) / [#35](https://github.com/shanmeng/SupportPilot/pull/35): a workflow deletes a PR's Neon preview branch when the PR closes.
 
 ## Retrospective
-> Facts below were drafted by Claude Code from the repository, PRs and CI history. The owner reviews them and writes the parts marked **(owner)**.
-
 ### What went well
 - **TDD stayed visible.** Every story has a red test commit before its green commit (US-01 `14f0b2f` → `bbbbb45`, US-06 `1035324` → `694f1c7`, US-02 `93321f7` → `191dd5f` and `b7cc93c` → `262940a`, US-04 `78b3f6d` → `cb48838`, US-05 `d688b2b` → `d4822d5`, US-03 `b318781` / `9c814b4` → `d801665` / `790518d`), and merge commits preserved them.
 - **CI caught real problems before merge.** The integration test for idempotent import found a wrong correlated subquery (Drizzle renders interpolated columns unqualified); the security scan blocked a PR (a false positive, handled by rewording rather than disabling the scanner).
 - **Every story was checked where users see it:** Vercel previews with the test users, and production for US-02 and US-04.
 - **The cut list was not needed:** pgvector, full-text search, citations and the full dashboard all shipped.
-- **(owner)** …
 
 ### What didn't go well
 - **Schedule.** The original Sprint 1 (Oct 30 – Nov 5) slipped because the project is built solo alongside an internship; after re-baselining, the sprint still finished one day late (Nov 14 instead of Nov 13).
@@ -95,13 +103,11 @@ Completed points: **21 / 21**
   - The Neon Free plan's 10-branch limit was reached twice (Dependabot previews, then merged-PR previews), so the PR #26 and PR #33 previews failed before building.
   - Auth environment variables were missing on Vercel at first, so every `/api/auth/*` route returned 500 on the preview.
 - **Local setup drift.** The local `main` was 28 commits behind `origin/main` with a stale HW3 commit, and `node_modules` was stale; a build run against the stale modules failed after a commit had already been pushed (the code itself was fine and passed CI).
-- **(owner)** …
 
 ### What to change in Sprint 2
 - Keep the automated Neon preview cleanup (#34); check Vercel environment variables before the first deploy of a feature that needs them.
 - Run `npm ci` after switching branches or pulling lockfile changes, and never chain a commit or push after a failing check.
 - Build the agent (US-07) against a mocked model first, so progress does not depend on obtaining an API key.
-- **(owner)** …
 
 ### AI harness notes
 - **Context:** `AGENTS.md` (loaded through `CLAUDE.md`) kept the work aligned with the rules: TDD order, server-side auth, no invented citations, English-only production data, no secrets in chat or git.
@@ -119,7 +125,14 @@ Completed points: **21 / 21**
   - The harness blocked installing a new dependency (`tsx`), and the import script was written on Node's built-in TypeScript support instead.
   - It blocked merges without the owner's explicit approval.
   - Secrets were always entered by the owner, never pasted into chat.
-- **(owner)** …
 
-### Feedback (solo exception: self-assessment in place of partner feedback)
-- **(owner)** …
+### Feedback (Solo Self-Assessment)
+- **What went well:**
+  - I stuck to the development process even under time pressure, using TDD, CI, and PR reviews instead of cutting corners.
+  - I was upfront about falling behind and adjusted the sprint deadlines accordingly.
+- **What I could improve:**
+  - **Planning:** I underestimated how much time I needed while balancing my internship. I need to set more realistic deadlines.
+  - **Setup:** I should check Vercel and Neon configurations earlier to avoid deployment blockers.
+  - **AI review:** I need to double-check AI-generated commands and test results instead of trusting them right away.
+- **Working solo:**
+  - I used AI-assisted self-reviews and CI checks for every PR. They helped catch issues, but I still missed having another person review my decisions.

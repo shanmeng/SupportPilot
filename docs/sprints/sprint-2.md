@@ -4,7 +4,7 @@
 |---|---|
 | **Milestone** | [Sprint 2](https://github.com/shanmeng/SupportPilot/milestone/2) |
 | **Dates** | Nov 14 (planning, evening) – Nov 15, 2026, 11:59 pm (P2 deadline, professor-approved extension) |
-| **Team** | shanmeng (solo, professor-approved exception) |
+| **Team** | shanmeng (solo, professor-approved) |
 | **AI harness** | Claude Code (professor-approved), guided by [`AGENTS.md`](../../AGENTS.md) |
 
 ## Sprint goal
@@ -92,20 +92,27 @@ Acceptance criteria are the checklists in the linked issues.
 ## Standups
 Format: done since last standup / next / blockers. **Written by the owner.**
 
+### Blockers during the sprint
+- Comparing model providers to decide which one to use.
+- Comparing the cost-effectiveness of different OpenAI models.
+- Applying for and configuring the OpenAI API key.
+- Production data had to be imported manually from my own terminal.
+- The Neon branch limit was reached a second time.
+
 ### Standup 1 — Nov 14 (evening, sprint planning)
-- **Done:**
-- **Next:**
-- **Blockers:**
+- **Done:** Sprint 1 finished: US-04 document search (#31), US-05 citation cards (#32), US-03 dashboard (#33). Dependabot previews skipped (#30) and Neon preview branches deleted automatically when PRs close (#35). Sprint 1 review and retrospective draft (#36). Sprint 2 planned with estimates (#37).
+- **Next:** US-07 bounded document agent (built first with a mocked model), then US-08 payment investigation.
+- **Blockers:** Comparing model providers and the cost-effectiveness of OpenAI models; applying for and configuring the OpenAI API key; the Neon branch limit was reached a second time (PR #33 preview).
 
 ### Standup 2 — Nov 15 (morning)
-- **Done:**
-- **Next:**
-- **Blockers:**
+- **Done:** OpenAI key configured (`gpt-6.1-sol`, `text-embedding-3-small`); production documents re-imported with embeddings. US-07 agent merged (#38) and verified on production. US-08 scoped investigation merged (#39); business data imported into production from my terminal.
+- **Next:** US-09 saved investigations, US-11 Playwright E2E in CI, US-12 API docs and deployment docs.
+- **Blockers:** Production data had to be imported manually from my own terminal.
 
 ### Standup 3 — Nov 15 (afternoon)
-- **Done:**
-- **Next:**
-- **Blockers:**
+- **Done:** US-09 history (#40), verified on a preview with real data. US-11 Playwright E2E as a CI job (#41); branch protection on `main`. US-12 OpenAPI + Swagger UI, architecture/ER/deployment docs, GitHub Environments and production smoke test (#42). US-10 progress states, reduced scope (#43). Sprint 2 review (#44).
+- **Next:** Owner sections of both retrospectives, demo video, individual reflection, submission.
+- **Blockers:** None open; live streaming of agent steps (SSE) was cut.
 
 ## Sprint review
 **All Sprint 2 stories are done (31 / 31 points); US-10 shipped with reduced scope** (no live streaming, see below). Everything was merged on Nov 15 with merge commits after green CI. Production: https://support-pilot-two.vercel.app.
@@ -127,30 +134,32 @@ Completed points: **31 / 31** (US-10 reduced in scope)
 **Quality at sprint end:** 16 red / 16 green TDD commit pairs on `main`; over 210 Vitest tests (unit + integration on real PostgreSQL + pgvector) and 10 Playwright E2E tests in CI; CodeQL, npm audit, gitleaks and dependency review on every PR; production smoke test after every deploy.
 
 ## Retrospective
-> Facts below were drafted by Claude Code from the repository, PRs and CI history. The owner reviews them and writes the parts marked **(owner)**.
-
 ### What went well
-- The agent's safety rules held up against the real model, not only mocks: unrelated questions returned `no_evidence`; a prompt-injection attempt did not produce an invented citation; a payment from another account was "not found" with nothing leaked.
-- Real data found real bugs early: the first business import failed on two dataset edge cases, each fixed test-first before anything was pushed.
-- Verifying on previews (with production data copies) caught issues before production; the production smoke test now automates the final check.
-- **(owner)** …
+- The agent's safety rules worked with the real model, not just mocks. It handled unrelated questions, prompt injection, and cross-account requests without making up evidence or leaking data.
+- Importing real data caught two edge cases early, and I fixed both with tests before pushing.
+- Preview testing helped catch problems before production, and I added an automated production smoke test.
 
 ### What didn't go well
-- **Live progress (SSE) was cut** to protect must-have work (E2E, docs, deployment checks).
-- **Process slip repeated:** a commit was made while typecheck was failing (`1b107d2`), the same pattern the Sprint 1 lesson warned about; fixed in the next commit and recorded on PR #40.
-- **Neon branch limit** was hit a second time (merged-PR previews) before the automatic cleanup existed.
-- **Docs needed rendering checks:** two Mermaid diagrams failed to render on GitHub until checked in the browser; CodeQL flagged a race in a new test helper.
-- **(owner)** …
+- I had to cut live progress updates (SSE) to focus on testing, documentation, and deployment.
+- I accidentally committed while typecheck was failing again. I fixed it in the next commit, but clearly hadn't learned that lesson from Sprint 1.
+- I hit Neon's branch limit again. I also missed Mermaid rendering issues until checking GitHub, and CodeQL caught a race condition in a test helper.
 
-### What to change next time
-- Run typecheck as a separate step and read it before every commit (or add a pre-commit hook).
-- Plan streaming/progress work earlier when it is a rubric item, or define its reduced version up front.
-- **(owner)** …
+### What I'd change next time
+- Run and check typecheck separately before every commit, or add a pre-commit hook.
+- Plan time for streaming features earlier, or simplify them from the start.
 
 ### AI harness notes
 - New in Sprint 2: the harness blocked merges without explicit owner approval each time and blocked one dependency install; Playwright was added after the owner asked for US-11.
 - See [ai-workflow.md](../ai-workflow.md) for the full list of AI mistakes and how they were caught.
-- **(owner)** …
 
-### Feedback (solo exception: self-assessment in place of partner feedback)
-- **(owner)** …
+### Feedback (Solo Self-Assessment)
+- **What went well:**
+  - I followed the Sprint 1 workflow: tests first, green CI, and preview checks before merging.
+  - I cut SSE early to focus on the must-have features and finish on time.
+  - I tested the agent with a real model and real data, not just mocks, and the safety checks passed.
+- **What I could improve:**
+  - **Planning:** I spent too much time comparing AI models and costs. I should have made that decision earlier.
+  - **Testing:** I committed code while typecheck was failing again. I need to check the results more carefully.
+  - **Docs:** I should preview documentation and diagrams before opening PRs.
+- **Working solo:**
+  - AI reviews, CI, and E2E tests caught a lot of issues, but I still had to make major decisions without a second opinion.
