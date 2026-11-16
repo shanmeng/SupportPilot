@@ -34,6 +34,7 @@ Previews (not production) also offer test users `e2e-engineer` / `e2e-lead`.
 | [AI workflow](docs/ai-workflow.md) | How Claude Code was used: context engineering, AI-assisted TDD, mistakes and guardrails |
 | [Sprint 1](docs/sprints/sprint-1.md) · [Sprint 2](docs/sprints/sprint-2.md) | Plans, estimates, standups, reviews, retrospectives |
 | [Contribution log](docs/contribution-log.md) | Work per issue/PR (solo project) |
+| [Project 2 reflection](docs/project2-reflection.md) | Individual reflection on Project 2 |
 | [PRD](docs/PRD.md) · [Mockup](docs/mockups/dashboard.html) | Requirements and approved UI concept |
 
 ## HW3: Context Engineering Evidence
