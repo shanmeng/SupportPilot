@@ -1,0 +1,9 @@
+# SupportPilot — Individual Reflection
+
+Building SupportPilot taught me that the hardest part of an AI product isn't getting the model to give an answer, but knowing when it shouldn't. At first, I wanted the agent to search freely and figure out the problem on its own. But I realized that without clear boundaries, it could easily give a confident answer without enough evidence. So I added tool limits, read-only access, and strict citation rules. When I tested it with a real model, it handled unrelated questions, prompt injection, and cross-account requests without making up evidence or exposing data. One important lesson was to keep account and environment restrictions in the application logic rather than trusting the model to enforce them.
+
+The biggest challenge was managing my time. I was working on the project alone while also doing an internship, and I underestimated how much work I could realistically finish. I fell behind schedule and had to adjust both sprints after getting an extension. Having a cut list helped me prioritize. I dropped live streaming (SSE) so I could focus on testing, security, and deployment.
+
+Claude Code helped me move much faster, especially with scaffolding, writing tests, and debugging deployment issues. But I also learned not to trust its output blindly. It made mistakes with SQL, Git commands, and deployment assumptions. TDD, CI, and my `AGENTS.md` rules helped catch many of these problems. I also made the same mistake twice by committing code before checking a failed typecheck. That showed me that writing down lessons isn't enough; I need to turn them into automated safeguards.
+
+Working solo meant I had to make every major decision myself. AI-assisted reviews, CI, and E2E tests were useful, but they couldn't fully replace feedback from another person. Next time, I'd set more realistic timelines, configure deployment earlier, and add pre-commit checks to catch preventable mistakes.
