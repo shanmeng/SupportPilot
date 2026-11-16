@@ -73,8 +73,11 @@ AI harness: Claude Code (professor-approved), guided by [`AGENTS.md`](AGENTS.md)
 | DB driver | postgres (postgres.js) | 4.1.1 |
 | Validation | zod | 4.6.7 |
 | Unit / integration tests | Vitest + React Testing Library | 5.0.5 / 16.3.3 |
-
-Planned for later stories: Auth.js with OAuth (US-02), Playwright E2E and GitHub Actions CI (US-06, US-11).
+| Authentication | Auth.js (`next-auth`) with GitHub OAuth, JWT sessions | 5.0.0-beta.32 |
+| E2E tests | Playwright | 1.65.1 |
+| AI model | OpenAI Responses API (`fetch`, no SDK); chat `gpt-6.1-sol`, embeddings `text-embedding-3-small` | configured by env vars |
+| API docs | OpenAPI 3.1 + Swagger UI (jsDelivr, with SRI) | 3.1.0 / 5.17.14 |
+| CI/CD | GitHub Actions (CI, CodeQL, production smoke test, Neon preview cleanup); Vercel + Neon | — |
 
 ## Local setup
 Prerequisites: Node.js 22, npm, Docker.
